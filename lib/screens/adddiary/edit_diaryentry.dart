@@ -12,7 +12,7 @@ import '../../providers/selectdiary_provider.dart';
 import '../../services/database_helper.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-
+import 'package:path_provider/path_provider.dart';
 class EditDiaryentry extends ConsumerStatefulWidget {
   const EditDiaryentry({super.key});
 
@@ -73,7 +73,30 @@ class _EditDiaryentryState extends ConsumerState<EditDiaryentry> {
     TemplateModel(maxImage: 5, templateType: Templates.rightImage),
     TemplateModel(maxImage: 12, templateType: Templates.images),
   ];
+  List<File?> getImageOfTemplates(Templates templates){
+    switch(templates){
 
+      case Templates.topImage:
+        return topImages;
+
+      case Templates.doubleTopImage:
+        return doubleTopImages;
+      case Templates.bottomImage:
+        return bottomImages;
+      case Templates.doubleBottomImage:
+        return doubleBottomImages;
+      case Templates.leftImage:
+        return leftImages;
+      case Templates.rightImage:
+        return rightImages;
+      case Templates.images:
+        return images;
+      default:
+        return [];
+
+
+    }
+  }
   ImagePicker picker = ImagePicker();
   List<File?> topImages = List.filled(3, null);
   List<File?> doubleTopImages = List.filled(6, null);
@@ -82,6 +105,7 @@ class _EditDiaryentryState extends ConsumerState<EditDiaryentry> {
   List<File?> leftImages = List.filled(5, null);
   List<File?> rightImages = List.filled(5, null);
   List<File?> images = List.filled(12, null);
+
 
   @override
   void dispose() {
@@ -635,8 +659,14 @@ class _EditDiaryentryState extends ConsumerState<EditDiaryentry> {
   Future<void> pickImages(List<File?> images, int index) async {
     XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
+      final dir=await getApplicationDocumentsDirectory();
+      final fileName=image.path.split('/').last;
+      final savedImage=await File(image.path).
+      copy("${dir.path}/$fileName",
+
+      );
       setState(() {
-        images[index] = File(image.path);
+        images[index] = savedImage;
       });
     }
   }
@@ -703,10 +733,17 @@ class _EditDiaryentryState extends ConsumerState<EditDiaryentry> {
               ),
               onPressed: () async {
                 if (selectDiary == null) return;
+                final imagePath = getImageOfTemplates(selectedTemplates).where((e)=>e!=null).map((e)=>e!.path).toList();
                 final diaryEntry = DiaryEntryModel(
                   diaryId: selectDiary.id!,
                   content: _contentController.text,
                   date: DateFormat('yyyy-MM-dd').format(selectedDate),
+                  font: selectedFont,
+                  mood: selectedMoods,
+                  templateIndex: selectedTemplates.index,
+                  imagePaths: imagePath,
+                  title: _titleController.text.trim(),
+                  subtitle: _subtitleController.text.trim(),
                 );
                 await DatabaseHelper.instance.insertDiaryEntry(diaryEntry);
                 Navigator.pop(context);

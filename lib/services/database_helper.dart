@@ -27,6 +27,12 @@ class DatabaseHelper {
   final String _diaryTableId = "diaryId";
   final String _diaryContent = "content";
   final String _diaryEntryDate = "entryDate";
+  final String _diaryFont = "font";
+  final String _diaryMood = "mood";
+  final String _diaryTemplateIndex = "templateIndex";
+  final String _diaryImagePaths = "imagePaths";
+  final String _diaryTitle = "title";
+  final String _diarySubtitle = "subtitle";
 
   DatabaseHelper._constructor();
 
@@ -60,7 +66,13 @@ class DatabaseHelper {
     $_diaryEntryId INTEGER PRIMARY KEY AUTOINCREMENT,
     $_diaryTableId INTEGER NOT NULL,
     $_diaryContent TEXT NOT NULL,
-    $_diaryEntryDate TEXT NOT NULL
+    $_diaryEntryDate TEXT NOT NULL,
+    $_diaryFont TEXT NOT NULL,
+    $_diaryMood TEXT NOT NULL,
+    $_diaryTemplateIndex INT NOT NULL,
+    $_diaryImagePaths TEXT ,
+    $_diaryTitle TEXT ,
+    $_diarySubtitle TEXT
    
     
       )
