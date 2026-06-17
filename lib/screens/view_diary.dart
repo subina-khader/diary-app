@@ -1,13 +1,11 @@
-import 'dart:math';
-
+import 'dart:io';
 import 'package:diary/models/diaryentry_model.dart';
 import 'package:diary/services/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-
 import '../providers/selectdiary_provider.dart';
-import 'adddiary/edit_diaryentry.dart';
+import 'adddiary/add_diaryentry.dart';
 
 class ViewDiary extends ConsumerStatefulWidget {
   const ViewDiary({super.key});
@@ -17,17 +15,25 @@ class ViewDiary extends ConsumerStatefulWidget {
 }
 
 class _ViewDiaryState extends ConsumerState<ViewDiary> {
-  late TextEditingController _contentController;
   late PageController _pageController;
   List<DiaryEntryModel> entries = [];
+
   int currentPage = 0;
+
   Future<int?> datePicker() async {
+    if (entries.isEmpty) return null;
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate:DateTime.parse(entries.last.date),
       firstDate: DateTime(2000),
       lastDate: DateTime(2080),
+      selectableDayPredicate: (day){
+        return entries.any(
+            (entry)=>entry.date==DateFormat('yyyy-MM-dd').format(day),);
+
+      }
     );
+
     if (pickedDate != null) {
       final index = entries.indexWhere(
         (entry) => entry.date == DateFormat('yyyy-MM-dd').format(pickedDate),
@@ -39,23 +45,515 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
 
   @override
   void dispose() {
-    _contentController.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  Widget? selectTemplates(int templateIndex, int index) {
+    switch (templateIndex) {
+      case 0:
+        return plainsWidget(index);
+      case 1:
+        return topWidget(index);
+      case 2:
+        return doubleTopWidget(index);
+      case 3:
+        return bottomWidget(index);
+      case 4:
+        return doubleBottomWidget(index);
+      case 5:
+        return leftWidget(index);
+      case 6:
+        return rightWidget(index);
+      case 7:
+        return imageWidget(index);
+    }
+  }
+
+  Widget plainWidget(int index) {
+    return Text(
+      entries[index].content,
+      style: TextStyle(color: Colors.black, fontFamily: entries[index].font),
+    );
+  }
+
+  Widget plainsWidget(int index) {
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Text(
+          entries[index].content,
+          style: TextStyle(
+            color: Colors.black,
+            fontFamily: entries[index].font,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget topWidget(int index) {
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(entries[index].imagePaths!.length, (
+                count,
+              ) {
+                return Padding(
+                  padding: EdgeInsets.only(right: 8),
+
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+
+                    onTap: () async {
+                      // await pickImages(topImages, index);
+                    },
+
+                    child: Container(
+                      width: 90,
+                      height: 90,
+
+                      decoration: BoxDecoration(
+                        color: Colors.pink.shade50,
+
+                        borderRadius: BorderRadius.circular(12),
+
+                        border: Border.all(color: Colors.pink.shade100),
+                      ),
+
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+
+                        child: Image.file(
+                          File(entries[index].imagePaths![count]),
+
+                          fit: BoxFit.cover,
+
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+            SizedBox(height: 20),
+
+            plainWidget(index),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget doubleTopWidget(int index) {
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GridView.builder(
+              shrinkWrap: true,
+
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: entries[index].imagePaths?.length,
+              itemBuilder: (context, count) {
+                return Padding(
+                  padding: EdgeInsets.only(right: 8),
+
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+
+                    onTap: () async {
+                      // await pickImages(doubleTopImages, index);
+                    },
+
+                    child: Container(
+                      width: 90,
+                      height: 90,
+
+                      decoration: BoxDecoration(
+                        color: Colors.pink.shade50,
+
+                        borderRadius: BorderRadius.circular(12),
+
+                        border: Border.all(color: Colors.pink.shade100),
+                      ),
+
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+
+                        child: Image.file(
+                          File(entries[index].imagePaths![count]),
+
+                          fit: BoxFit.cover,
+
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            SizedBox(height: 20),
+
+            plainWidget(index),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget bottomWidget(int index) {
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+
+          children: [
+            plainWidget(index),
+
+            SizedBox(height: 20),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+
+              children: List.generate(entries[index].imagePaths!.length, (
+                count,
+              ) {
+                return Padding(
+                  padding: EdgeInsets.only(right: 8),
+
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+
+                    onTap: () async {
+                      // await pickImages(bottomImages, index);
+                    },
+
+                    child: Container(
+                      width: 90,
+                      height: 90,
+
+                      decoration: BoxDecoration(
+                        color: Colors.pink.shade50,
+
+                        borderRadius: BorderRadius.circular(12),
+
+                        border: Border.all(color: Colors.pink.shade100),
+                      ),
+
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+
+                        child: Image.file(
+                          File(entries[index].imagePaths![count]),
+
+                          fit: BoxFit.cover,
+
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget leftWidget(int index) {
+    return Expanded(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisSize: MainAxisSize.max,
+              children: List.generate(entries[index].imagePaths!.length, (
+                count,
+              ) {
+                return Padding(
+                  padding: EdgeInsets.only(right: 8),
+
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+
+                    onTap: () async {
+                      // await pickImages(leftImages, index);
+                    },
+
+                    child: Container(
+                      width: 90,
+                      height: 90,
+
+                      decoration: BoxDecoration(
+                        color: Colors.pink.shade50,
+
+                        borderRadius: BorderRadius.circular(12),
+
+                        border: Border.all(color: Colors.pink.shade100),
+                      ),
+
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+
+                        child: Image.file(
+                          File(entries[index].imagePaths![count]),
+
+                          fit: BoxFit.cover,
+
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+          SizedBox(width: 7),
+
+          Expanded(child: plainWidget(index)),
+        ],
+      ),
+    );
+  }
+
+  Widget rightWidget(int index) {
+    return Expanded(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: plainWidget(index)),
+          SizedBox(width: 7),
+          SizedBox(
+            width: 100,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisSize: MainAxisSize.max,
+              children: List.generate(entries[index].imagePaths!.length, (
+                count,
+              ) {
+                return Padding(
+                  padding: EdgeInsets.only(right: 8),
+
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+
+                    onTap: () async {
+                      // await pickImages(rightImages, index);
+                    },
+
+                    child: Container(
+                      width: 90,
+                      height: 90,
+
+                      decoration: BoxDecoration(
+                        color: Colors.pink.shade50,
+
+                        borderRadius: BorderRadius.circular(12),
+
+                        border: Border.all(color: Colors.pink.shade100),
+                      ),
+
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+
+                        child: Image.file(
+                          File(entries[index].imagePaths![count]),
+
+                          fit: BoxFit.cover,
+
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget imageWidget(int index) {
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            Text(
+              entries[index].title!,
+              textAlign: TextAlign.center,
+
+              style: TextStyle(
+                fontFamily: entries[index].font,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+            Text(
+              entries[index].subtitle!,
+
+              textAlign: TextAlign.center,
+
+              style: TextStyle(
+                fontFamily: entries[index].font,
+                color: Colors.grey.shade600,
+                fontSize: 15,
+              ),
+            ),
+            SizedBox(height: 20),
+            GridView.builder(
+              shrinkWrap: true,
+
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: entries[index].imagePaths?.length,
+              itemBuilder: (context, count) {
+                return InkWell(
+                  borderRadius: BorderRadius.circular(12),
+
+                  onTap: () async {
+                    // await pickImages(images, index);
+                  },
+
+                  child: Container(
+                    width: 90,
+                    height: 90,
+
+                    decoration: BoxDecoration(
+                      color: Colors.pink.shade50,
+
+                      borderRadius: BorderRadius.circular(12),
+
+                      border: Border.all(color: Colors.pink.shade100),
+                    ),
+
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+
+                      child: Image.file(
+                        File(entries[index].imagePaths![count]),
+
+                        fit: BoxFit.cover,
+
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget doubleBottomWidget(int index) {
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            plainWidget(index),
+            SizedBox(height: 20),
+            GridView.builder(
+              shrinkWrap: true,
+
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+              ),
+              itemCount: entries[index].imagePaths?.length,
+              itemBuilder: (context, count) {
+                return Padding(
+                  padding: EdgeInsets.only(right: 8),
+
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+
+                    onTap: () async {
+                      // await pickImages(doubleBottomImages, index);
+                    },
+
+                    child: Container(
+                      width: 90,
+                      height: 90,
+
+                      decoration: BoxDecoration(
+                        color: Colors.pink.shade50,
+
+                        borderRadius: BorderRadius.circular(12),
+
+                        border: Border.all(color: Colors.pink.shade100),
+                      ),
+
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+
+                        child: Image.file(
+                          File(entries[index].imagePaths![count]),
+                          fit: BoxFit.cover,
+
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   void initState() {
     super.initState();
-    _contentController = TextEditingController();
     _pageController = PageController();
     loadEntries();
   }
 
-  void loadEntries() async {
+  Future<void> loadEntries() async {
     final diary = ref.read(SelectedDiaryProvider);
     if (diary == null) return;
     entries = await DatabaseHelper.instance.getAllEntriesByDiaryId(diary.id!);
+
     setState(() {});
   }
 
@@ -67,12 +565,21 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
       appBar: AppBar(
         backgroundColor: Colors.pink.shade50,
         automaticallyImplyLeading: true,
-        title: Align(
-          alignment: Alignment.centerRight,
-          child: IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.settings, color: Colors.brown),
-          ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            IconButton(
+              onPressed: () {
+              },
+              icon: Icon(Icons.edit, color: Colors.brown),
+            ),
+            IconButton(
+              onPressed: () {
+
+              },
+              icon: Icon(Icons.settings, color: Colors.brown),
+            ),
+          ],
         ),
       ),
       body: Padding(
@@ -87,7 +594,31 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
             child: Column(
               children: [
                 Expanded(
-                  child: PageView.builder(
+                  child: entries.isEmpty?Center(
+                    child: Container(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                      Text(
+                      "Diary is empty" ,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: "Caveat",
+                        color: Colors.grey
+                      ),
+
+                                          ),
+                            SizedBox(height: 10,),
+                            Text(
+                              "Click the + button to start writing your diary" ,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontFamily: "Caveat",
+                                  color: Colors.grey
+
+                              ),
+                            ),],),),
+                  ):PageView.builder(
                     itemCount: entries.length,
                     itemBuilder: (context, index) {
                       return Container(
@@ -101,7 +632,7 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                                   ),
                                   style: TextStyle(
                                     fontSize: 20,
-                                    fontFamily: "Caveat",
+                                    fontFamily: entries[index].font,
                                   ),
                                 ),
                                 Spacer(),
@@ -114,25 +645,30 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                                         duration: Duration(milliseconds: 23),
                                         curve: Curves.easeIn,
                                       );
+                                    selectTemplates(
+                                      entries[index!].templateIndex,
+                                      index!,
+                                    );
                                   },
                                   child: Icon(Icons.calendar_month, size: 19),
                                 ),
                               ],
                             ),
                             SizedBox(height: 20),
+                            ?selectTemplates(entries[index].templateIndex,index),
 
-                            Expanded(
-                              child: SingleChildScrollView(
-                                child: Text(
-                                  entries[index].content,
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontFamily: "Caveat",
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            // Expanded(
+                            //   child: SingleChildScrollView(
+                            //     child: Text(
+                            //       entries[index].content,
+                            //       style: TextStyle(
+                            //         color: Colors.black,
+                            //         fontFamily: entries[index].font,
+                            //         fontSize: 16,
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
                           ],
                         ),
                       );
@@ -154,13 +690,19 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         backgroundColor: Colors.brown,
         foregroundColor: Colors.white,
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async{
+           String? passedDate=await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => EditDiaryentry()),
+            MaterialPageRoute(builder: (context) => AddDiaryentry()),
           );
+          await loadEntries();
+          if(passedDate!=null){
+            int pageindex = entries.indexWhere((e)=>e.date==passedDate);
+            _pageController.jumpToPage(pageindex);
+
+          }
         },
-        child: Icon(Icons.edit),
+        child: Icon(Icons.add),
       ),
     );
   }

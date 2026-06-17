@@ -13,14 +13,15 @@ import '../../services/database_helper.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-class EditDiaryentry extends ConsumerStatefulWidget {
-  const EditDiaryentry({super.key});
+import 'package:table_calendar/table_calendar.dart';
+class AddDiaryentry extends ConsumerStatefulWidget {
+  const AddDiaryentry({super.key});
 
   @override
-  ConsumerState<EditDiaryentry> createState() => _EditDiaryentryState();
+  ConsumerState<AddDiaryentry> createState() => _AddDiaryentryState();
 }
 
-class _EditDiaryentryState extends ConsumerState<EditDiaryentry> {
+class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
   late TextEditingController _contentController;
   late TextEditingController _titleController;
   late TextEditingController _subtitleController;
@@ -32,6 +33,7 @@ class _EditDiaryentryState extends ConsumerState<EditDiaryentry> {
   String selectedFont = "Caveat";
   String selectedMoods = "Happy";
   Templates selectedTemplates = Templates.plain;
+  bool hasEntry=false;
 
 
   int count = 1;
@@ -679,8 +681,24 @@ class _EditDiaryentryState extends ConsumerState<EditDiaryentry> {
         .getEntryBySelectedDate(diary.id!, date);
     if (entry != null) {
       _contentController.text = entry.content;
+      selectedTemplates=templates[entry.templateIndex].templateType;
+
+      selectedMoods=entry.mood;
+    selectedFont=entry.font;
+      pickTemplates(selectedTemplates);
+
+      setState(() {
+        hasEntry=true;
+        pickTemplates(selectedTemplates);
+        selectedFont=entry.font;
+      });
+
+
     } else {
       _contentController.clear();
+      setState(() {
+        hasEntry=false;
+      });
     }
   }
 
@@ -719,7 +737,8 @@ class _EditDiaryentryState extends ConsumerState<EditDiaryentry> {
               child: Icon(Icons.close, color: Colors.brown),
             ),
             Text(
-              "Edit Entry",
+              hasEntry?"Edit Entry":
+              "Add Entry",
               style: TextStyle(
                 fontSize: 25,
                 fontFamily: "Caveat",
@@ -746,7 +765,8 @@ class _EditDiaryentryState extends ConsumerState<EditDiaryentry> {
                   subtitle: _subtitleController.text.trim(),
                 );
                 await DatabaseHelper.instance.insertDiaryEntry(diaryEntry);
-                Navigator.pop(context);
+                Navigator.pop(context ,DateFormat('yyyy-MM-dd')
+                    .format(selectedDate),);
               },
               child: Row(
                 mainAxisSize: MainAxisSize.min,

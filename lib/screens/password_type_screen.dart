@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/selectdiary_provider.dart';
-import 'adddiary/edit_diaryentry.dart';
+import 'adddiary/add_diaryentry.dart';
 
 class PasswordTypeScreen extends ConsumerStatefulWidget {
   const PasswordTypeScreen({super.key});
@@ -142,7 +142,7 @@ class _PasswordTypeScreenState extends ConsumerState<PasswordTypeScreen> {
                       if (check) {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) => ViewDiary()),
+                      MaterialPageRoute(builder: (context) => ViewDiary()),
                         );
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
