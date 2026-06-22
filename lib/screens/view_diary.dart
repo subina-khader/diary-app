@@ -19,22 +19,24 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
   List<DiaryEntryModel> entries = [];
 
   int currentPage = 0;
+  DateTime? selectedCalenderDate;
 
   Future<int?> datePicker() async {
     if (entries.isEmpty) return null;
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate:DateTime.parse(entries.last.date),
+      initialDate: selectedCalenderDate ?? DateTime.parse(entries.last.date),
       firstDate: DateTime(2000),
       lastDate: DateTime(2080),
-      selectableDayPredicate: (day){
+      selectableDayPredicate: (day) {
         return entries.any(
-            (entry)=>entry.date==DateFormat('yyyy-MM-dd').format(day),);
-
-      }
+          (entry) => entry.date == DateFormat('yyyy-MM-dd').format(day),
+        );
+      },
     );
 
     if (pickedDate != null) {
+      selectedCalenderDate = pickedDate;
       final index = entries.indexWhere(
         (entry) => entry.date == DateFormat('yyyy-MM-dd').format(pickedDate),
       );
@@ -569,14 +571,11 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             IconButton(
-              onPressed: () {
-              },
+              onPressed: () {},
               icon: Icon(Icons.edit, color: Colors.brown),
             ),
             IconButton(
-              onPressed: () {
-
-              },
+              onPressed: () {},
               icon: Icon(Icons.settings, color: Colors.brown),
             ),
           ],
@@ -594,92 +593,92 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
             child: Column(
               children: [
                 Expanded(
-                  child: entries.isEmpty?Center(
-                    child: Container(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                      Text(
-                      "Diary is empty" ,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: "Caveat",
-                        color: Colors.grey
-                      ),
-
-                                          ),
-                            SizedBox(height: 10,),
-                            Text(
-                              "Click the + button to start writing your diary" ,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontFamily: "Caveat",
-                                  color: Colors.grey
-
-                              ),
-                            ),],),),
-                  ):PageView.builder(
-                    itemCount: entries.length,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        child: Column(
-                          children: [
-                            Row(
+                  child: entries.isEmpty
+                      ? Center(
+                          child: Container(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  DateFormat.yMMMd().format(
-                                    DateTime.parse(entries[index].date),
-                                  ),
+                                  "Diary is empty",
                                   style: TextStyle(
-                                    fontSize: 20,
-                                    fontFamily: entries[index].font,
+                                    fontSize: 16,
+                                    fontFamily: "Caveat",
+                                    color: Colors.grey,
                                   ),
                                 ),
-                                Spacer(),
-                                InkWell(
-                                  onTap: () async {
-                                    int? index = await datePicker();
-                                    if (index != null)
-                                      _pageController.animateToPage(
-                                        index,
-                                        duration: Duration(milliseconds: 23),
-                                        curve: Curves.easeIn,
-                                      );
-                                    selectTemplates(
-                                      entries[index!].templateIndex,
-                                      index!,
-                                    );
-                                  },
-                                  child: Icon(Icons.calendar_month, size: 19),
+                                SizedBox(height: 10),
+                                Text(
+                                  "Click the + button to start writing your diary",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontFamily: "Caveat",
+                                    color: Colors.grey,
+                                  ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 20),
-                            ?selectTemplates(entries[index].templateIndex,index),
+                          ),
+                        )
+                      : PageView.builder(
+                          itemCount: entries.length,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        DateFormat.yMMMd().format(
+                                          DateTime.parse(entries[index].date),
+                                        ),
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontFamily: entries[index].font,
+                                        ),
+                                      ),
+                                      Spacer(),
+                                      InkWell(
+                                        onTap: () async {
+                                          int? index = await datePicker();
+                                          if (index != null) {
+                                            _pageController.animateToPage(
+                                              index,
+                                              duration: Duration(
+                                                milliseconds: 23,
+                                              ),
+                                              curve: Curves.easeIn,
+                                            );
+                                            selectTemplates(
+                                              entries[index!].templateIndex,
+                                              index!,
+                                            );
+                                          }
+                                        },
+                                        child: Icon(
+                                          Icons.calendar_month,
+                                          size: 19,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 20),
+                                  ?selectTemplates(
+                                    entries[index].templateIndex,
+                                    index,
+                                  ),
 
-                            // Expanded(
-                            //   child: SingleChildScrollView(
-                            //     child: Text(
-                            //       entries[index].content,
-                            //       style: TextStyle(
-                            //         color: Colors.black,
-                            //         fontFamily: entries[index].font,
-                            //         fontSize: 16,
-                            //       ),
-                            //     ),
-                            //   ),
-                            // ),
-                          ],
+                                ],
+                              ),
+                            );
+                          },
+                          controller: _pageController,
+                          onPageChanged: (index) {
+                            setState(() {
+                              currentPage = index;
+                            });
+                          },
                         ),
-                      );
-                    },
-                    controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        currentPage = index;
-                      });
-                    },
-                  ),
                 ),
               ],
             ),
@@ -690,16 +689,15 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         backgroundColor: Colors.brown,
         foregroundColor: Colors.white,
-        onPressed: () async{
-           String? passedDate=await Navigator.push(
+        onPressed: () async {
+          String? passedDate = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => AddDiaryentry()),
           );
           await loadEntries();
-          if(passedDate!=null){
-            int pageindex = entries.indexWhere((e)=>e.date==passedDate);
+          if (passedDate != null) {
+            int pageindex = entries.indexWhere((e) => e.date == passedDate);
             _pageController.jumpToPage(pageindex);
-
           }
         },
         child: Icon(Icons.add),

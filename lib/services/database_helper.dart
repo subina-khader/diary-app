@@ -91,21 +91,55 @@ class DatabaseHelper {
     final data = await db.query("$_diaryTable");
     return data.map((e) => DiaryModel.fromMap(e)).toList();
   }
-
   Future<void> insertDiaryEntry(DiaryEntryModel entry) async {
+    print("insertDiaryEntry START");
+
     Database db = await instance.database;
-    final existing = await getEntryBySelectedDate(entry.diaryId, entry.date);
+
+    final existing = await getEntryBySelectedDate(
+      entry.diaryId,
+      entry.date,
+    );
+
+    print("Existing Entry: $existing");
+
     if (existing != null) {
+      print("UPDATING ENTRY");
+
       await db.update(
         _diaryEntryTable,
         entry.toMap(),
         where: '$_diaryEntryId=?',
         whereArgs: [existing.id],
-      ); //existing .id means the entry id
+      );
+
+      print("UPDATE SUCCESS");
     } else {
-      await db.insert(_diaryEntryTable, entry.toMap());
+      print("INSERTING NEW ENTRY");
+
+      await db.insert(
+        _diaryEntryTable,
+        entry.toMap(),
+      );
+
+      print("INSERT SUCCESS");
     }
   }
+
+  // Future<void> insertDiaryEntry(DiaryEntryModel entry) async {
+  //   Database db = await instance.database;
+  //   final existing = await getEntryBySelectedDate(entry.diaryId, entry.date);
+  //   if (existing != null) {
+  //     await db.update(
+  //       _diaryEntryTable,
+  //       entry.toMap(),
+  //       where: '$_diaryEntryId=?',
+  //       whereArgs: [existing.id],
+  //     ); //existing .id means the entry id
+  //   } else {
+  //     await db.insert(_diaryEntryTable, entry.toMap());
+  //   }
+  // }
 
   Future<List<DiaryEntryModel>> getAllEntriesByDiaryId(int diaryId) async {
     Database db = await instance.database;
@@ -143,6 +177,16 @@ class DatabaseHelper {
       return DiaryEntryModel.fromMap(data.first);
     }
     return null;
+  }
+
+  Future<List<Map<String, dynamic>>> getAllMoods() async {
+    final db = await database;
+
+    return await db.query(
+      _diaryEntryTable,
+      columns: ['mood', 'entryDate'],
+      orderBy: 'entryDate DESC',
+    );
   }
 
   Future<bool> checkPassword(int diaryId, String password) async {

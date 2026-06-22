@@ -4,9 +4,11 @@ import 'package:diary/screens/template_screen.dart';
 import 'package:diary/screens/view_diary.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:sqflite/sqflite.dart';
 import '../../models/emojis_model.dart';
 import '../../providers/selectdiary_provider.dart';
 import '../../services/database_helper.dart';
@@ -14,6 +16,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
+
 class AddDiaryentry extends ConsumerStatefulWidget {
   const AddDiaryentry({super.key});
 
@@ -26,6 +29,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
   late TextEditingController _titleController;
   late TextEditingController _subtitleController;
   DateTime selectedDate = DateTime.now();
+  List<String>? loadedImages = [];
   bool showFonts = false;
   bool showMoods = false;
   bool showStickers = false;
@@ -33,8 +37,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
   String selectedFont = "Caveat";
   String selectedMoods = "Happy";
   Templates selectedTemplates = Templates.plain;
-  bool hasEntry=false;
-
+  bool hasEntry = false;
 
   int count = 1;
   List<String> fonts = [
@@ -75,9 +78,8 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
     TemplateModel(maxImage: 5, templateType: Templates.rightImage),
     TemplateModel(maxImage: 12, templateType: Templates.images),
   ];
-  List<File?> getImageOfTemplates(Templates templates){
-    switch(templates){
-
+  List<File?> getImageOfTemplates(Templates templates) {
+    switch (templates) {
       case Templates.topImage:
         return topImages;
 
@@ -95,10 +97,9 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
         return images;
       default:
         return [];
-
-
     }
   }
+
   ImagePicker picker = ImagePicker();
   List<File?> topImages = List.filled(3, null);
   List<File?> doubleTopImages = List.filled(6, null);
@@ -107,7 +108,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
   List<File?> leftImages = List.filled(5, null);
   List<File?> rightImages = List.filled(5, null);
   List<File?> images = List.filled(12, null);
-
+  List<DateTime> entryDates = [];
 
   @override
   void dispose() {
@@ -115,6 +116,79 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
     _titleController.dispose();
     _subtitleController.dispose();
     super.dispose();
+  }
+
+  Future<void> loadEntryDates() async {
+    final diary = ref.read(SelectedDiaryProvider);
+    if (diary == null) return;
+
+    final entries = await DatabaseHelper.instance.getAllEntriesByDiaryId(
+      diary.id!,
+    );
+    entryDates = entries.map((e) => DateTime.parse(e.date)).toList();
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _contentController = TextEditingController();
+    _titleController = TextEditingController();
+    _subtitleController = TextEditingController();
+    loadIfContent(selectedDate);
+    loadEntryDates();
+  }
+
+  Future<DateTime?> datePicker() async {
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          child: SizedBox(
+            height: 380,
+            child: TableCalendar(
+              calendarBuilders: CalendarBuilders(
+                defaultBuilder: (context, day, focusedDay) {
+                  bool hasEntry = entryDates.any((e) => isSameDay(day, e));
+                  if (hasEntry) {
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.pink.shade200,
+                        ),
+                        child: Center(
+                          child: Text(
+                            "${day.day}",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+              focusedDay: selectedDate,
+              firstDay: DateTime(2000),
+              lastDay: DateTime(2090),
+              selectedDayPredicate: (day) {
+                return isSameDay(selectedDate, day);
+              },
+              headerStyle: HeaderStyle(formatButtonVisible: false),
+              onDaySelected: (selectedDay, focusedDate) async {
+                setState(() {
+                  selectedDate = selectedDay;
+                });
+                await loadIfContent(selectedDay);
+
+                Navigator.pop(context);
+              },
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget plainWidget() {
@@ -649,24 +723,12 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _contentController = TextEditingController();
-    _titleController = TextEditingController();
-    _subtitleController = TextEditingController();
-    loadIfContent(selectedDate);
-  }
-
   Future<void> pickImages(List<File?> images, int index) async {
     XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      final dir=await getApplicationDocumentsDirectory();
-      final fileName=image.path.split('/').last;
-      final savedImage=await File(image.path).
-      copy("${dir.path}/$fileName",
-
-      );
+      final dir = await getApplicationDocumentsDirectory();
+      final fileName = image.path.split('/').last;
+      final savedImage = await File(image.path).copy("${dir.path}/$fileName");
       setState(() {
         images[index] = savedImage;
       });
@@ -681,40 +743,275 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
         .getEntryBySelectedDate(diary.id!, date);
     if (entry != null) {
       _contentController.text = entry.content;
-      selectedTemplates=templates[entry.templateIndex].templateType;
-
-      selectedMoods=entry.mood;
-    selectedFont=entry.font;
+      selectedTemplates = templates[entry.templateIndex].templateType;
+      selectedMoods = entry.mood;
+      selectedFont = entry.font;
       pickTemplates(selectedTemplates);
+      if (selectedTemplates == Templates.images) {
+        _titleController.text = entry.title ?? "";
+        _subtitleController.text = entry.subtitle ?? "";
+      }
+      loadedImages = entry.imagePaths;
 
+      if (loadedImages != null) {
+        count = entry.imagePaths!.length;
+
+        List<File> fileImages = loadedImages!.map((e) => File(e)).toList();
+        final templt = getImageOfTemplates(selectedTemplates);
+        for (int i = 0; i < count; i++) {
+          templt[i] = fileImages[i];
+        }
+      }
       setState(() {
-        hasEntry=true;
-        pickTemplates(selectedTemplates);
-        selectedFont=entry.font;
+        hasEntry = true;
       });
-
-
     } else {
       _contentController.clear();
+      _titleController.clear();
+      _subtitleController.clear();
+      selectedTemplates = Templates.plain;
+      selectedFont = "Caveat";
+      selectedMoods = "Happy";
+      count = 1;
+      topImages = List.filled(3, null);
+      doubleTopImages = List.filled(6, null);
+      bottomImages = List.filled(3, null);
+      doubleBottomImages = List.filled(6, null);
+      leftImages = List.filled(5, null);
+      rightImages = List.filled(5, null);
+      images = List.filled(12, null);
+
       setState(() {
-        hasEntry=false;
+        hasEntry = false;
       });
     }
   }
 
-  Future<void> datePicker() async {
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2080),
-    );
-    if (pickedDate != null) {
-      setState(() {
-        selectedDate = pickedDate;
-      });
+  Future<void> changeTemplates(newTemplates, newCount) async {
+    List<File?> oldImages = List.from(getImageOfTemplates(selectedTemplates));
+    int oldImageLength = oldImages.where((e) => e != null).length;
+
+    if (oldImageLength <= newCount) {
+      selectedTemplates = newTemplates;
+      count = newCount;
+      List<File?> newImages = getImageOfTemplates(selectedTemplates);
+
+      for (int i = 0; i < oldImageLength; i++) {
+        newImages[i] = oldImages[i];
+      }
+      setState(() {});
+    } else {
+      final remainingImages = await showDialog(
+        context: context,
+        builder: (context) {
+          final dialogImages =
+          oldImages.where((e) => e != null).toList();
+          return StatefulBuilder(
+            builder: (context, dialogSetState) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                actionsPadding: const EdgeInsets.all(16),
+
+                title: Row(
+                  children: [
+                    
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          "Keep only $newCount images",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                content: SizedBox(
+                  width: double.maxFinite,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Remove extra images until only $newCount remain.",
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                        ),
+                      ),
+
+                      const SizedBox(height: 15),
+
+                      SizedBox(
+                        height: 250,
+                        child: GridView.builder(
+                          itemCount: dialogImages.length,
+                          gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                          ),
+                          itemBuilder: (context, index) {
+                            return Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: SizedBox.expand(
+                                    child: Image.file(
+                                      dialogImages[index]!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+
+                                Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: Material(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(20),
+                                      onTap: () {
+                                        dialogSetState(() {
+                                          dialogImages.removeAt(index);
+                                        });
+                                      },
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(4),
+                                        child: Icon(
+                                          Icons.close,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                Positioned(
+                                  left: 6,
+                                  bottom: 6,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      "${index + 1}",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                actions: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all(
+                              Colors.pink.shade200,
+                            ),
+                            foregroundColor: MaterialStateProperty.all(
+                              Colors.white,
+                            ),
+                            shape: MaterialStateProperty.all(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text("Cancel"),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      Expanded(
+                        child: FilledButton.icon(
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.resolveWith((states) {
+                              if (states.contains(MaterialState.disabled)) {
+                                return Colors.grey.shade300;
+                              }
+                              return Colors.pink.shade200;
+                            }),
+                            foregroundColor: MaterialStateProperty.resolveWith((states) {
+                              if (states.contains(MaterialState.disabled)) {
+                                return Colors.grey.shade500;
+                              }
+                              return Colors.white;
+                            }),
+                            shape: MaterialStateProperty.all(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                          onPressed: dialogImages.length == newCount
+                              ? () {
+                            Navigator.pop(context, dialogImages);
+                          }
+                              : null,
+                          icon: const Icon(Icons.check),
+                          label: Text(
+                            "Done (${dialogImages.length}/$newCount)",
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+      if (remainingImages != null &&
+          remainingImages.length <= newCount) {
+
+        selectedTemplates = newTemplates;
+        count = newCount;
+
+
+
+        List<File?> targetImages =
+        getImageOfTemplates(selectedTemplates);
+
+        for (int i = 0; i < targetImages.length; i++) {
+          targetImages[i] = null;
+        }
+
+        for (int i = 0; i < remainingImages.length; i++) {
+          targetImages[i] = remainingImages[i];
+        }
+
+        setState(() {});
+      }
     }
-    await loadIfContent(selectedDate);
   }
 
   @override
@@ -737,8 +1034,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
               child: Icon(Icons.close, color: Colors.brown),
             ),
             Text(
-              hasEntry?"Edit Entry":
-              "Add Entry",
+              hasEntry ? "Edit Entry" : "Add Entry",
               style: TextStyle(
                 fontSize: 25,
                 fontFamily: "Caveat",
@@ -751,8 +1047,17 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                 backgroundColor: MaterialStateProperty.all(Colors.brown),
               ),
               onPressed: () async {
-                if (selectDiary == null) return;
-                final imagePath = getImageOfTemplates(selectedTemplates).where((e)=>e!=null).map((e)=>e!.path).toList();
+
+                if (selectDiary == null) {
+                  return;
+                }
+
+                final imagePath = getImageOfTemplates(
+                  selectedTemplates,
+                ).where((e) => e != null).map((e) => e!.path).toList();
+
+
+
                 final diaryEntry = DiaryEntryModel(
                   diaryId: selectDiary.id!,
                   content: _contentController.text,
@@ -764,9 +1069,33 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                   title: _titleController.text.trim(),
                   subtitle: _subtitleController.text.trim(),
                 );
-                await DatabaseHelper.instance.insertDiaryEntry(diaryEntry);
-                Navigator.pop(context ,DateFormat('yyyy-MM-dd')
-                    .format(selectedDate),);
+
+              if (_contentController.text.trim().isNotEmpty ||
+                    _titleController.text.trim().isNotEmpty ||
+                    _subtitleController.text.trim().isNotEmpty ||
+                    imagePath.isNotEmpty) {
+                  hasEntry = true;
+                } else {
+                  hasEntry = false;
+                }
+
+                try {
+
+                  if (hasEntry) {
+
+                    await DatabaseHelper.instance.insertDiaryEntry(diaryEntry);
+
+                  } else {
+                  }
+
+
+                  Navigator.pop(
+                    context,
+                    DateFormat('yyyy-MM-dd').format(selectedDate),
+                  );
+                } catch (e, stackTrace) {
+                  print(stackTrace);
+                }
               },
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -784,6 +1113,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                 ],
               ),
             ),
+
           ],
         ),
       ),
@@ -887,18 +1217,19 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                         TapOption(
                           icon: Icons.dashboard_customize_outlined,
                           label: "Template",
-                          onTap: () async{
+                          onTap: () async {
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => TemplateScreen(),
                               ),
                             );
-    if (result != null) {
-                            setState(() {
-                              selectedTemplates=templates[result["templateindex"]].templateType;
-                              count=result["count"];
-                            });}
+                            if (result != null) {
+                              await changeTemplates(
+                                templates[result["templateindex"]].templateType,
+                                result["count"],
+                              );
+                            }
                             // setState(() {
                             //   showTemplates = !showTemplates;
                             // });
@@ -1040,11 +1371,9 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                         ),
                       ),
                     ],
-
                   ],
                 ),
               ),
-              // child: PageView.builder(itemCount:,itemBuilder: itemBuilder),
             ),
           ],
         ),
