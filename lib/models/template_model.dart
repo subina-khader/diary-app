@@ -1,12 +1,12 @@
 enum Templates {
   plain,
-  topImage,
-  doubleTopImage,
-  bottomImage,
-  doubleBottomImage,
-  leftImage,
-  rightImage,
-  images,
+  topMedia,
+  doubleTopMedia,
+  bottomMedia,
+  doubleBottomMedia,
+  leftMedia,
+  rightMedia,
+  medias,
 
 }
 

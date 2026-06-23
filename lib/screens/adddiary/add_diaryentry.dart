@@ -1,6 +1,7 @@
 import 'package:diary/models/diaryentry_model.dart';
 import 'package:diary/models/template_model.dart';
 import 'package:diary/screens/template_screen.dart';
+import 'package:diary/screens/full_screen_image.dart';
 import 'package:diary/screens/view_diary.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/cupertino.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../models/emojis_model.dart';
+import '../../models/media_model.dart';
 import '../../providers/selectdiary_provider.dart';
 import '../../services/database_helper.dart';
 import 'dart:io';
@@ -38,7 +40,8 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
   String selectedMoods = "Happy";
   Templates selectedTemplates = Templates.plain;
   bool hasEntry = false;
-
+  int? selectedMediaIndex;
+  String? selectedMediaGroup;
   int count = 1;
   List<String> fonts = [
     "Caveat",
@@ -70,46 +73,105 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
   ];
   List<TemplateModel> templates = [
     TemplateModel(maxImage: 0, templateType: Templates.plain),
-    TemplateModel(maxImage: 3, templateType: Templates.topImage),
-    TemplateModel(maxImage: 6, templateType: Templates.doubleTopImage),
-    TemplateModel(maxImage: 3, templateType: Templates.bottomImage),
-    TemplateModel(maxImage: 6, templateType: Templates.doubleBottomImage),
-    TemplateModel(maxImage: 5, templateType: Templates.leftImage),
-    TemplateModel(maxImage: 5, templateType: Templates.rightImage),
-    TemplateModel(maxImage: 12, templateType: Templates.images),
+    TemplateModel(maxImage: 3, templateType: Templates.topMedia),
+    TemplateModel(maxImage: 6, templateType: Templates.doubleTopMedia),
+    TemplateModel(maxImage: 3, templateType: Templates.bottomMedia),
+    TemplateModel(maxImage: 6, templateType: Templates.doubleBottomMedia),
+    TemplateModel(maxImage: 5, templateType: Templates.leftMedia),
+    TemplateModel(maxImage: 5, templateType: Templates.rightMedia),
+    TemplateModel(maxImage: 12, templateType: Templates.medias),
   ];
-  List<File?> getImageOfTemplates(Templates templates) {
-    switch (templates) {
-      case Templates.topImage:
-        return topImages;
 
-      case Templates.doubleTopImage:
-        return doubleTopImages;
-      case Templates.bottomImage:
-        return bottomImages;
-      case Templates.doubleBottomImage:
-        return doubleBottomImages;
-      case Templates.leftImage:
-        return leftImages;
-      case Templates.rightImage:
-        return rightImages;
-      case Templates.images:
-        return images;
+  Future<void> pickMedia(
+      List<MediaFile?> mediaList,
+      int index,
+      ) async {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Icons.image),
+              title: Text("Image"),
+              onTap: () async {
+                Navigator.pop(context);
+
+                final file =
+                await picker.pickImage(
+                  source: ImageSource.gallery,
+                );
+
+                if (file != null) {
+                  mediaList[index] = MediaFile(
+                    path: file.path,
+                    type: MediaType.image,
+                  );
+
+                  setState(() {});
+                }
+              },
+            ),
+
+            ListTile(
+              leading: Icon(Icons.video_library),
+              title: Text("Video"),
+              onTap: () async {
+                Navigator.pop(context);
+
+                final file =
+                await picker.pickVideo(
+                  source: ImageSource.gallery,
+                );
+
+                if (file != null) {
+                  mediaList[index] = MediaFile(
+                    path: file.path,
+                    type: MediaType.video,
+                  );
+
+                  setState(() {});
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+  List<MediaFile?> getMediaOfTemplates(Templates templates) {
+    switch (templates) {
+      case Templates.topMedia:
+        return topMedia;
+
+      case Templates.doubleTopMedia:
+        return doubleTopMedia;
+      case Templates.bottomMedia:
+        return bottomMedia;
+      case Templates.doubleBottomMedia:
+        return doubleBottomMedia;
+      case Templates.leftMedia:
+        return leftMedia;
+      case Templates.rightMedia:
+        return rightMedia;
+      case Templates.medias:
+        return medias;
       default:
         return [];
     }
   }
 
   ImagePicker picker = ImagePicker();
-  List<File?> topImages = List.filled(3, null);
-  List<File?> doubleTopImages = List.filled(6, null);
-  List<File?> bottomImages = List.filled(3, null);
-  List<File?> doubleBottomImages = List.filled(6, null);
-  List<File?> leftImages = List.filled(5, null);
-  List<File?> rightImages = List.filled(5, null);
-  List<File?> images = List.filled(12, null);
+  List<MediaFile?> topMedia = List.filled(3, null);
+  List<MediaFile?> doubleTopMedia = List.filled(6, null);
+  List<MediaFile?> bottomMedia = List.filled(3, null);
+  List<MediaFile?> doubleBottomMedia = List.filled(6, null);
+  List<MediaFile?> leftMedia = List.filled(5, null);
+  List<MediaFile?> rightMedia = List.filled(5, null);
+  List<MediaFile?> medias = List.filled(12, null);
   List<DateTime> entryDates = [];
-
+  String? selectedImageKey;
   @override
   void dispose() {
     _contentController.dispose();
@@ -117,7 +179,142 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
     _subtitleController.dispose();
     super.dispose();
   }
+  Widget buildMediaTile({
+    required MediaFile media,
+    required List<MediaFile?> mediaList,
+    required int index,
+  }) {
+    bool isSelected =
+        selectedMediaIndex == index &&
+            selectedMediaGroup == mediaList.hashCode.toString();
 
+    return InkWell(
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            selectedMediaIndex = null;
+            selectedMediaGroup = null;
+          } else {
+            selectedMediaIndex = index;
+            selectedMediaGroup =
+                mediaList.hashCode.toString();
+          }
+        });
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          media.type == MediaType.image
+              ? Image.file(
+            File(media.path),
+            fit: BoxFit.cover,
+          )
+              : Container(
+            color: Colors.black12,
+            child: const Icon(
+              Icons.play_circle_fill,
+            ),
+          ),
+
+          if (isSelected)
+            Container(
+              color: Colors.black.withOpacity(.45),
+            ),
+
+          if (isSelected)
+            Center(
+              child: Row(
+
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+
+                  InkWell(
+                    onTap:  () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                FullScreenImage(
+                  imagePath: media.path,
+                ),
+          ),
+        );
+      },
+                    child: const Icon(
+                      Icons.visibility,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  InkWell(
+                    onTap: () async {
+        await pickMedia(
+          mediaList,
+          index,
+        );
+      },
+                    child: const Icon(
+                      Icons.edit,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+
+                  // IconButton(
+                  //   onPressed: () async {
+                  //     await pickMedia(
+                  //       mediaList,
+                  //       index,
+                  //     );
+                  //   },
+                  //   icon: const Icon(
+                  //     Icons.edit,
+                  //     color: Colors.white,
+                  //   ),
+                  // ),
+
+
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+  // Widget buildMediaTile({
+  //   required MediaFile media,
+  //   required List<MediaFile?> mediaList,
+  //   required int index,
+  // }) {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       borderRadius: BorderRadius.circular(12),
+  //     ),
+  //     child: media.type == MediaType.image
+  //         ? ClipRRect(
+  //       borderRadius: BorderRadius.circular(12),
+  //       child: Image.file(
+  //         File(media.path),
+  //         fit: BoxFit.cover,
+  //       ),
+  //     )
+  //         : Stack(
+  //       fit: StackFit.expand,
+  //       children: [
+  //         Container(
+  //           color: Colors.black12,
+  //         ),
+  //         const Center(
+  //           child: Icon(
+  //             Icons.play_circle_fill,
+  //             size: 40,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
   Future<void> loadEntryDates() async {
     final diary = ref.read(SelectedDiaryProvider);
     if (diary == null) return;
@@ -138,6 +335,30 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
     loadIfContent(selectedDate);
     loadEntryDates();
   }
+  // Widget buildMedia(MediaFile media) {
+  //   if (media.type == MediaType.image) {
+  //     return Image.file(
+  //       File(media.path),
+  //       fit: BoxFit.cover,
+  //     );
+  //   }
+  //
+  //   return Stack(
+  //     fit: StackFit.expand,
+  //     children: [
+  //       VideoThumbnailWidget(
+  //         videoPath: media.path,
+  //       ),
+  //       Center(
+  //         child: Icon(
+  //           Icons.play_circle_fill,
+  //           size: 40,
+  //           color: Colors.white,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Future<DateTime?> datePicker() async {
     await showDialog(
@@ -243,9 +464,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
 
-                    onTap: () async {
-                      await pickImages(topImages, index);
-                    },
+                      onTap: () async {
+                        if (topMedia[index] == null) {
+                          await pickMedia(topMedia, index);
+                        } else {
+                          showMediaOptions(topMedia, index);
+                        }
+                      },
 
                     child: Container(
                       width: 90,
@@ -259,20 +484,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                         border: Border.all(color: Colors.pink.shade100),
                       ),
 
-                      child: topImages[index] == null
+                      child: topMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-
-                              child: Image.file(
-                                topImages[index]!,
-
-                                fit: BoxFit.cover,
-
-                                width: double.infinity,
-                                height: double.infinity,
-                              ),
-                            ),
+                          : buildMediaTile(
+                        media: topMedia[index]!,
+                        mediaList: topMedia,
+                        index: index,
+                      )
                     ),
                   ),
                 );
@@ -311,7 +529,11 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                     borderRadius: BorderRadius.circular(12),
 
                     onTap: () async {
-                      await pickImages(doubleTopImages, index);
+                      if (doubleTopMedia[index] == null) {
+                        await pickMedia(doubleTopMedia, index);
+                      } else {
+                        showMediaOptions(doubleTopMedia, index);
+                      }
                     },
 
                     child: Container(
@@ -326,20 +548,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                         border: Border.all(color: Colors.pink.shade100),
                       ),
 
-                      child: doubleTopImages[index] == null
+                      child: doubleTopMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-
-                              child: Image.file(
-                                doubleTopImages[index]!,
-
-                                fit: BoxFit.cover,
-
-                                width: double.infinity,
-                                height: double.infinity,
-                              ),
-                            ),
+                          : buildMediaTile(
+                        media: doubleTopMedia[index]!,
+                        mediaList: doubleTopMedia,
+                        index: index,
+                      )
                     ),
                   ),
                 );
@@ -377,7 +592,11 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                     borderRadius: BorderRadius.circular(12),
 
                     onTap: () async {
-                      await pickImages(bottomImages, index);
+                      if (bottomMedia[index] == null) {
+                        await pickMedia(bottomMedia, index);
+                      } else {
+                        showMediaOptions(bottomMedia, index);
+                      }
                     },
 
                     child: Container(
@@ -392,20 +611,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                         border: Border.all(color: Colors.pink.shade100),
                       ),
 
-                      child: bottomImages[index] == null
+                      child: bottomMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-
-                              child: Image.file(
-                                bottomImages[index]!,
-
-                                fit: BoxFit.cover,
-
-                                width: double.infinity,
-                                height: double.infinity,
-                              ),
-                            ),
+                          : buildMediaTile(
+                        media: bottomMedia[index]!,
+                        mediaList: bottomMedia,
+                        index: index,
+                      )
                     ),
                   ),
                 );
@@ -443,7 +655,11 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                     borderRadius: BorderRadius.circular(12),
 
                     onTap: () async {
-                      await pickImages(doubleBottomImages, index);
+                      if (doubleBottomMedia[index] == null) {
+                        await pickMedia(doubleBottomMedia, index);
+                      } else {
+                        showMediaOptions(doubleBottomMedia, index);
+                      }
                     },
 
                     child: Container(
@@ -458,20 +674,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                         border: Border.all(color: Colors.pink.shade100),
                       ),
 
-                      child: doubleBottomImages[index] == null
+                      child: doubleBottomMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-
-                              child: Image.file(
-                                doubleBottomImages[index]!,
-
-                                fit: BoxFit.cover,
-
-                                width: double.infinity,
-                                height: double.infinity,
-                              ),
-                            ),
+                          : buildMediaTile(
+                        media: doubleBottomMedia[index]!,
+                        mediaList: doubleBottomMedia,
+                        index: index,
+                      )
                     ),
                   ),
                 );
@@ -501,7 +710,11 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                     borderRadius: BorderRadius.circular(12),
 
                     onTap: () async {
-                      await pickImages(leftImages, index);
+                      if (leftMedia[index] == null) {
+                        await pickMedia(leftMedia, index);
+                      } else {
+                        showMediaOptions(leftMedia, index);
+                      }
                     },
 
                     child: Container(
@@ -516,20 +729,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                         border: Border.all(color: Colors.pink.shade100),
                       ),
 
-                      child: leftImages[index] == null
+                      child: leftMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-
-                              child: Image.file(
-                                leftImages[index]!,
-
-                                fit: BoxFit.cover,
-
-                                width: double.infinity,
-                                height: double.infinity,
-                              ),
-                            ),
+                          : buildMediaTile(
+                        media: leftMedia[index]!,
+                        mediaList: leftMedia,
+                        index: index,
+                      )
                     ),
                   ),
                 );
@@ -564,7 +770,11 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                     borderRadius: BorderRadius.circular(12),
 
                     onTap: () async {
-                      await pickImages(rightImages, index);
+                      if (rightMedia[index] == null) {
+                        await pickMedia(rightMedia, index);
+                      } else {
+                        showMediaOptions(rightMedia, index);
+                      }
                     },
 
                     child: Container(
@@ -579,20 +789,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                         border: Border.all(color: Colors.pink.shade100),
                       ),
 
-                      child: rightImages[index] == null
+                      child: rightMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-
-                              child: Image.file(
-                                rightImages[index]!,
-
-                                fit: BoxFit.cover,
-
-                                width: double.infinity,
-                                height: double.infinity,
-                              ),
-                            ),
+                          : buildMediaTile(
+                        media: rightMedia[index]!,
+                        mediaList: rightMedia,
+                        index: index,
+                      )
                     ),
                   ),
                 );
@@ -660,7 +863,11 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                   borderRadius: BorderRadius.circular(12),
 
                   onTap: () async {
-                    await pickImages(images, index);
+                    if (medias[index] == null) {
+                      await pickMedia(medias, index);
+                    } else {
+                      showMediaOptions(medias, index);
+                    }
                   },
 
                   child: Container(
@@ -675,20 +882,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                       border: Border.all(color: Colors.pink.shade100),
                     ),
 
-                    child: images[index] == null
+                    child: medias[index] == null
                         ? Icon(Icons.add, color: Colors.brown)
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-
-                            child: Image.file(
-                              images[index]!,
-
-                              fit: BoxFit.cover,
-
-                              width: double.infinity,
-                              height: double.infinity,
-                            ),
-                          ),
+                        : buildMediaTile(
+                      media: medias[index]!,
+                      mediaList: medias,
+                      index: index,
+                    )
                   ),
                 );
               },
@@ -701,39 +901,39 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
 
   Widget pickTemplates(Templates temp) {
     switch (temp) {
-      case Templates.topImage:
+      case Templates.topMedia:
         return topWidget();
 
-      case Templates.doubleTopImage:
+      case Templates.doubleTopMedia:
         return doubleTopWidget();
-      case Templates.bottomImage:
+      case Templates.bottomMedia:
         return bottomWidget();
 
-      case Templates.doubleBottomImage:
+      case Templates.doubleBottomMedia:
         return doubleBottomWidget();
 
-      case Templates.leftImage:
+      case Templates.leftMedia:
         return leftWidget();
-      case Templates.rightImage:
+      case Templates.rightMedia:
         return rightWidget();
-      case Templates.images:
+      case Templates.medias:
         return imageWidget();
       default:
         return plainsWidget();
     }
   }
 
-  Future<void> pickImages(List<File?> images, int index) async {
-    XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      final dir = await getApplicationDocumentsDirectory();
-      final fileName = image.path.split('/').last;
-      final savedImage = await File(image.path).copy("${dir.path}/$fileName");
-      setState(() {
-        images[index] = savedImage;
-      });
-    }
-  }
+  // Future<void> pickImages(List<File?> images, int index) async {
+  //   XFile? image = await picker.pickImage(source: ImageSource.gallery);
+  //   if (image != null) {
+  //     final dir = await getApplicationDocumentsDirectory();
+  //     final fileName = image.path.split('/').last;
+  //     final savedImage = await File(image.path).copy("${dir.path}/$fileName");
+  //     setState(() {
+  //       images[index] = savedImage;
+  //     });
+  //   }
+  // }
 
   Future<void> loadIfContent(DateTime selectedDate) async {
     final diary = ref.read(SelectedDiaryProvider);
@@ -747,7 +947,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
       selectedMoods = entry.mood;
       selectedFont = entry.font;
       pickTemplates(selectedTemplates);
-      if (selectedTemplates == Templates.images) {
+      if (selectedTemplates == Templates.medias) {
         _titleController.text = entry.title ?? "";
         _subtitleController.text = entry.subtitle ?? "";
       }
@@ -756,10 +956,21 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
       if (loadedImages != null) {
         count = entry.imagePaths!.length;
 
-        List<File> fileImages = loadedImages!.map((e) => File(e)).toList();
-        final templt = getImageOfTemplates(selectedTemplates);
+        List<MediaFile> fileImages =
+        loadedImages!
+            .map(
+              (e) => MediaFile(
+            path: e,
+            type: MediaType.image,
+          ),
+        )
+            .toList();
+        final templt = getMediaOfTemplates(selectedTemplates);
         for (int i = 0; i < count; i++) {
-          templt[i] = fileImages[i];
+          templt[i] =  MediaFile(
+            path: fileImages[i].path,
+            type: MediaType.image,
+          );
         }
       }
       setState(() {
@@ -773,13 +984,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
       selectedFont = "Caveat";
       selectedMoods = "Happy";
       count = 1;
-      topImages = List.filled(3, null);
-      doubleTopImages = List.filled(6, null);
-      bottomImages = List.filled(3, null);
-      doubleBottomImages = List.filled(6, null);
-      leftImages = List.filled(5, null);
-      rightImages = List.filled(5, null);
-      images = List.filled(12, null);
+      topMedia = List.filled(3, null);
+      doubleTopMedia = List.filled(6, null);
+      bottomMedia = List.filled(3, null);
+      doubleBottomMedia = List.filled(6, null);
+      leftMedia = List.filled(5, null);
+      rightMedia = List.filled(5, null);
+      medias = List.filled(12, null);
 
       setState(() {
         hasEntry = false;
@@ -788,13 +999,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
   }
 
   Future<void> changeTemplates(newTemplates, newCount) async {
-    List<File?> oldImages = List.from(getImageOfTemplates(selectedTemplates));
+    List<MediaFile?> oldImages = List.from(getMediaOfTemplates(selectedTemplates));
     int oldImageLength = oldImages.where((e) => e != null).length;
 
     if (oldImageLength <= newCount) {
       selectedTemplates = newTemplates;
       count = newCount;
-      List<File?> newImages = getImageOfTemplates(selectedTemplates);
+      List<MediaFile?> newImages = getMediaOfTemplates(selectedTemplates);
 
       for (int i = 0; i < oldImageLength; i++) {
         newImages[i] = oldImages[i];
@@ -864,7 +1075,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                                   borderRadius: BorderRadius.circular(12),
                                   child: SizedBox.expand(
                                     child: Image.file(
-                                      dialogImages[index]!,
+                                      File(dialogImages[index]!.path),
                                       fit: BoxFit.cover,
                                     ),
                                   ),
@@ -998,8 +1209,8 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
 
 
 
-        List<File?> targetImages =
-        getImageOfTemplates(selectedTemplates);
+        List<MediaFile?> targetImages =
+        getMediaOfTemplates(selectedTemplates);
 
         for (int i = 0; i < targetImages.length; i++) {
           targetImages[i] = null;
@@ -1012,6 +1223,61 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
         setState(() {});
       }
     }
+  }
+
+  void showMediaOptions(
+      List<MediaFile?> mediaList,
+      int index,
+      ) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.visibility),
+              title: const Text("Preview"),
+              onTap: () {
+                Navigator.pop(context);
+
+                if (mediaList[index]!.type ==
+                    MediaType.image) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FullScreenImage(
+                        imagePath:
+                        mediaList[index]!.path,
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.edit),
+              title: const Text("Replace"),
+              onTap: () async {
+                Navigator.pop(context);
+                await pickMedia(mediaList, index);
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text("Remove"),
+              onTap: () {
+                mediaList[index] = null;
+                setState(() {});
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -1052,7 +1318,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                   return;
                 }
 
-                final imagePath = getImageOfTemplates(
+                final imagePath = getMediaOfTemplates(
                   selectedTemplates,
                 ).where((e) => e != null).map((e) => e!.path).toList();
 
