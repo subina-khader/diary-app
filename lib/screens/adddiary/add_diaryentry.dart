@@ -19,7 +19,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:table_calendar/table_calendar.dart';
-
+import '../../widgets/video_thumbnail.dart';
 class AddDiaryentry extends ConsumerStatefulWidget {
   const AddDiaryentry({super.key});
 
@@ -207,8 +207,8 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
           : Stack(
             fit: StackFit.expand,
             children: [
-              Container(
-                color: Colors.black12,
+              VideoThumbnailWidget(
+                videoPath: media.path,
               ),
               const Center(
                 child: Icon(
@@ -1059,15 +1059,22 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                                             File(dialogImages[index]!.path),
                                             fit: BoxFit.cover,
                                           )
-                                        : Container(
-                                            color: Colors.black12,
-                                            child: const Center(
-                                              child: Icon(
-                                                Icons.play_circle_fill,
-                                                size: 40,
-                                              ),
-                                            ),
-                                          ),
+                                        :  Stack(
+                            fit: StackFit.expand,
+                            children: [
+                            VideoThumbnailWidget(
+                            videoPath:  dialogImages[index]!.path,
+                            ),
+
+                            const Center(
+                            child: Icon(
+                            Icons.play_circle_fill,
+                            color: Colors.white,
+                            size: 40,
+                            ),
+                            ),
+                            ],
+                            ),
                                     // Image.file(
                                     //   File(dialogImages[index]!.path),
                                     //   fit: BoxFit.cover,
