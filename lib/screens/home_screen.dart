@@ -98,7 +98,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: Padding(
         padding: EdgeInsets.fromLTRB(17, 20, 17, 20),
-        child: ListView.builder(
+        child:  diarys.isEmpty
+      ? Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.menu_book_outlined,
+                  size: 80,
+                  color: Colors.brown.shade300,
+                ),
+
+                const SizedBox(height: 20),
+
+                const Text(
+                  "No Diaries Found",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: "Caveat",
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                Text(
+                  "Tap the + button below to create your first diary. Your memories will appear here.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+    )
+        :ListView.builder(
           itemCount: diarys.length,
           itemBuilder: (context, index) {
             return DiaryCard(

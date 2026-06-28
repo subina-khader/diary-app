@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/media_model.dart';
 import '../providers/selectdiary_provider.dart';
+import '../widgets/video_thumbnail.dart';
 import 'adddiary/add_diaryentry.dart';
+import 'full_screen_image.dart';
 
 class ViewDiary extends ConsumerStatefulWidget {
   const ViewDiary({super.key});
@@ -45,7 +47,39 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
     }
     return null;
   }
-
+  Widget mediaTile(MediaFile media) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => FullScreenImage(
+                media: media,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          width: 90,
+          height: 90,
+          decoration: BoxDecoration(
+            color: Colors.pink.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.pink.shade100,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: buildMediaView(media),
+          ),
+        ),
+      ),
+    );
+  }
   @override
   void dispose() {
     _pageController.dispose();
@@ -88,17 +122,27 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
       );
     }
 
-    return Container(
-      color: Colors.black12,
-      child: const Center(
-        child: Icon(
-          Icons.play_circle_fill,
-          size: 40,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        VideoThumbnailWidget(
+          videoPath: media.path,
         ),
-      ),
+
+        Container(
+          color: Colors.black26,
+        ),
+
+        const Center(
+          child: Icon(
+            Icons.play_circle_fill,
+            color: Colors.white,
+            size: 40,
+          ),
+        ),
+      ],
     );
   }
-
   Widget plainWidget(int index) {
     return Text(
       entries[index].content,
@@ -132,45 +176,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
               children: List.generate(entries[index].mediaFiles!.length, (
                 count,
               ) {
-                return Padding(
-                  padding: EdgeInsets.only(right: 8),
-
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-
-                    onTap: () async {
-                      // await pickImages(topImages, index);
-                    },
-
-                    child: Container(
-                      width: 90,
-                      height: 90,
-
-                      decoration: BoxDecoration(
-                        color: Colors.pink.shade50,
-
-                        borderRadius: BorderRadius.circular(12),
-
-                        border: Border.all(color: Colors.pink.shade100),
-                      ),
-
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-
-                        // child: Image.file(
-                        //   File(entries[index].imagePaths![count]),
-                        //
-                        //   fit: BoxFit.cover,
-                        //
-                        //   width: double.infinity,
-                        //   height: double.infinity,
-                        // ),
-                        child: buildMediaView(
-                          entries[index].mediaFiles![count],
-                        ),
-                      ),
-                    ),
-                  ),
+                return mediaTile(
+                  entries[index].mediaFiles![count],
                 );
               }),
             ),
@@ -200,37 +207,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
               ),
               itemCount: entries[index].mediaFiles?.length,
               itemBuilder: (context, count) {
-                return Padding(
-                  padding: EdgeInsets.only(right: 8),
-
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-
-                    onTap: () async {
-                      // await pickImages(doubleTopImages, index);
-                    },
-
-                    child: Container(
-                      width: 90,
-                      height: 90,
-
-                      decoration: BoxDecoration(
-                        color: Colors.pink.shade50,
-
-                        borderRadius: BorderRadius.circular(12),
-
-                        border: Border.all(color: Colors.pink.shade100),
-                      ),
-
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-
-                        child: buildMediaView(
-                          entries[index].mediaFiles![count],
-                        ),
-                      ),
-                    ),
-                  ),
+                return mediaTile(
+                  entries[index].mediaFiles![count],
                 );
               },
             ),
@@ -261,37 +239,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
               children: List.generate(entries[index].mediaFiles!.length, (
                 count,
               ) {
-                return Padding(
-                  padding: EdgeInsets.only(right: 8),
-
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-
-                    onTap: () async {
-                      // await pickImages(bottomImages, index);
-                    },
-
-                    child: Container(
-                      width: 90,
-                      height: 90,
-
-                      decoration: BoxDecoration(
-                        color: Colors.pink.shade50,
-
-                        borderRadius: BorderRadius.circular(12),
-
-                        border: Border.all(color: Colors.pink.shade100),
-                      ),
-
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-
-                        child: buildMediaView(
-                          entries[index].mediaFiles![count],
-                        ),
-                      ),
-                    ),
-                  ),
+                return mediaTile(
+                  entries[index].mediaFiles![count],
                 );
               }),
             ),
@@ -314,37 +263,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
               children: List.generate(entries[index].mediaFiles!.length, (
                 count,
               ) {
-                return Padding(
-                  padding: EdgeInsets.only(right: 8),
-
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-
-                    onTap: () async {
-                      // await pickImages(leftImages, index);
-                    },
-
-                    child: Container(
-                      width: 90,
-                      height: 90,
-
-                      decoration: BoxDecoration(
-                        color: Colors.pink.shade50,
-
-                        borderRadius: BorderRadius.circular(12),
-
-                        border: Border.all(color: Colors.pink.shade100),
-                      ),
-
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-
-                        child: buildMediaView(
-                          entries[index].mediaFiles![count],
-                        ),
-                      ),
-                    ),
-                  ),
+                return mediaTile(
+                  entries[index].mediaFiles![count],
                 );
               }),
             ),
@@ -372,37 +292,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
               children: List.generate(entries[index].mediaFiles!.length, (
                 count,
               ) {
-                return Padding(
-                  padding: EdgeInsets.only(right: 8),
-
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-
-                    onTap: () async {
-                      // await pickImages(rightImages, index);
-                    },
-
-                    child: Container(
-                      width: 90,
-                      height: 90,
-
-                      decoration: BoxDecoration(
-                        color: Colors.pink.shade50,
-
-                        borderRadius: BorderRadius.circular(12),
-
-                        border: Border.all(color: Colors.pink.shade100),
-                      ),
-
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-
-                        child: buildMediaView(
-                          entries[index].mediaFiles![count],
-                        ),
-                      ),
-                    ),
-                  ),
+                return mediaTile(
+                  entries[index].mediaFiles![count],
                 );
               }),
             ),
@@ -450,33 +341,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
               ),
               itemCount: entries[index].mediaFiles?.length,
               itemBuilder: (context, count) {
-                return InkWell(
-                  borderRadius: BorderRadius.circular(12),
-
-                  onTap: () async {
-                    // await pickImages(images, index);
-                  },
-
-                  child: Container(
-                    width: 90,
-                    height: 90,
-
-                    decoration: BoxDecoration(
-                      color: Colors.pink.shade50,
-
-                      borderRadius: BorderRadius.circular(12),
-
-                      border: Border.all(color: Colors.pink.shade100),
-                    ),
-
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-
-                      child: buildMediaView(
-                        entries[index].mediaFiles![count],
-                      ),
-                    ),
-                  ),
+                return mediaTile(
+                  entries[index].mediaFiles![count],
                 );
               },
             ),
@@ -505,37 +371,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
               ),
               itemCount: entries[index].mediaFiles?.length,
               itemBuilder: (context, count) {
-                return Padding(
-                  padding: EdgeInsets.only(right: 8),
-
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-
-                    onTap: () async {
-                      // await pickImages(doubleBottomImages, index);
-                    },
-
-                    child: Container(
-                      width: 90,
-                      height: 90,
-
-                      decoration: BoxDecoration(
-                        color: Colors.pink.shade50,
-
-                        borderRadius: BorderRadius.circular(12),
-
-                        border: Border.all(color: Colors.pink.shade100),
-                      ),
-
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-
-                        child: buildMediaView(
-                          entries[index].mediaFiles![count],
-                        ),
-                      ),
-                    ),
-                  ),
+                return mediaTile(
+                  entries[index].mediaFiles![count],
                 );
               },
             ),
