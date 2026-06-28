@@ -2,6 +2,8 @@
 
 import 'dart:convert';
 
+import 'media_model.dart';
+
 class DiaryEntryModel {
   final int? id;
   final int diaryId;
@@ -10,7 +12,7 @@ class DiaryEntryModel {
   final String font;
   final String mood;
   final int templateIndex;
-  final List<String>? imagePaths;
+  final List<MediaFile>? mediaFiles;
   final String? title;
   final String? subtitle;
   DiaryEntryModel({
@@ -21,7 +23,7 @@ class DiaryEntryModel {
     required this.font,
     required this.mood,
     required this.templateIndex,
-    this.imagePaths,
+    this.mediaFiles,
     this.title,
     this.subtitle,
   });
@@ -35,7 +37,12 @@ class DiaryEntryModel {
       "font": font,
       "mood": mood,
       "templateIndex": templateIndex,
-      if (imagePaths != null) "imagePaths": jsonEncode(imagePaths),
+      if (mediaFiles != null)
+        "imagePaths": jsonEncode(
+          mediaFiles!
+              .map((e) => e.toJson())
+              .toList(),
+        ),
       if (title != null) "title": title,
       if (subtitle != null) "subtitle": subtitle,
     };
@@ -51,8 +58,12 @@ class DiaryEntryModel {
       font: map["font"],
       mood: map["mood"],
       templateIndex: map["templateIndex"],
-      imagePaths: map["imagePaths"] != null
-          ? List<String>.from(jsonDecode(map["imagePaths"]))
+      mediaFiles: map["imagePaths"] != null
+          ? (jsonDecode(map["imagePaths"]) as List)
+          .map(
+            (e) => MediaFile.fromJson(e),
+      )
+          .toList()
           : null,
       title: map["title"],
       subtitle: map["subtitle"],

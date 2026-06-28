@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:video_player/video_player.dart';
 import '../../models/emojis_model.dart';
 import '../../models/media_model.dart';
 import '../../providers/selectdiary_provider.dart';
@@ -31,7 +32,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
   late TextEditingController _titleController;
   late TextEditingController _subtitleController;
   DateTime selectedDate = DateTime.now();
-  List<String>? loadedImages = [];
+  List<MediaFile>? loadedMedia;
   bool showFonts = false;
   bool showMoods = false;
   bool showStickers = false;
@@ -82,10 +83,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
     TemplateModel(maxImage: 12, templateType: Templates.medias),
   ];
 
-  Future<void> pickMedia(
-      List<MediaFile?> mediaList,
-      int index,
-      ) async {
+  Future<void> pickMedia(List<MediaFile?> mediaList, int index) async {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -98,8 +96,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
               onTap: () async {
                 Navigator.pop(context);
 
-                final file =
-                await picker.pickImage(
+                final file = await picker.pickImage(
                   source: ImageSource.gallery,
                 );
 
@@ -120,8 +117,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
               onTap: () async {
                 Navigator.pop(context);
 
-                final file =
-                await picker.pickVideo(
+                final file = await picker.pickVideo(
                   source: ImageSource.gallery,
                 );
 
@@ -140,6 +136,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
       },
     );
   }
+
   List<MediaFile?> getMediaOfTemplates(Templates templates) {
     switch (templates) {
       case Templates.topMedia:
@@ -179,6 +176,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
     _subtitleController.dispose();
     super.dispose();
   }
+
   Widget buildMediaTile({
     required MediaFile media,
     required List<MediaFile?> mediaList,
@@ -186,7 +184,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
   }) {
     bool isSelected =
         selectedMediaIndex == index &&
-            selectedMediaGroup == mediaList.hashCode.toString();
+        selectedMediaGroup == mediaList.hashCode.toString();
 
     return InkWell(
       onTap: () {
@@ -196,8 +194,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
             selectedMediaGroup = null;
           } else {
             selectedMediaIndex = index;
-            selectedMediaGroup =
-                mediaList.hashCode.toString();
+            selectedMediaGroup = mediaList.hashCode.toString();
           }
         });
       },
@@ -205,41 +202,41 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
         fit: StackFit.expand,
         children: [
           media.type == MediaType.image
-              ? Image.file(
-            File(media.path),
-            fit: BoxFit.cover,
-          )
-              : Container(
-            color: Colors.black12,
-            child: const Icon(
-              Icons.play_circle_fill,
-            ),
+              ? Image.file(File(media.path), fit: BoxFit.cover)
+              // :
+          : Stack(
+            fit: StackFit.expand,
+            children: [
+              Container(
+                color: Colors.black12,
+              ),
+              const Center(
+                child: Icon(
+                  Icons.play_circle_fill,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
+            ],
           ),
 
-          if (isSelected)
-            Container(
-              color: Colors.black.withOpacity(.45),
-            ),
+          if (isSelected) Container(color: Colors.black.withOpacity(.45)),
 
           if (isSelected)
             Center(
               child: Row(
-
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-
                   InkWell(
-                    onTap:  () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                FullScreenImage(
-                  imagePath: media.path,
-                ),
-          ),
-        );
-      },
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              FullScreenImage(media: media,),
+                        ),
+                      );
+                    },
                     child: const Icon(
                       Icons.visibility,
                       color: Colors.white,
@@ -249,11 +246,8 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                   const SizedBox(width: 15),
                   InkWell(
                     onTap: () async {
-        await pickMedia(
-          mediaList,
-          index,
-        );
-      },
+                      await pickMedia(mediaList, index);
+                    },
                     child: const Icon(
                       Icons.edit,
                       color: Colors.white,
@@ -273,8 +267,6 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                   //     color: Colors.white,
                   //   ),
                   // ),
-
-
                 ],
               ),
             ),
@@ -282,6 +274,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
       ),
     );
   }
+
   // Widget buildMediaTile({
   //   required MediaFile media,
   //   required List<MediaFile?> mediaList,
@@ -464,13 +457,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
 
-                      onTap: () async {
-                        if (topMedia[index] == null) {
-                          await pickMedia(topMedia, index);
-                        } else {
-                          showMediaOptions(topMedia, index);
-                        }
-                      },
+                    onTap: () async {
+                      if (topMedia[index] == null) {
+                        await pickMedia(topMedia, index);
+                      } else {
+                        showMediaOptions(topMedia, index);
+                      }
+                    },
 
                     child: Container(
                       width: 90,
@@ -487,10 +480,10 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                       child: topMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
                           : buildMediaTile(
-                        media: topMedia[index]!,
-                        mediaList: topMedia,
-                        index: index,
-                      )
+                              media: topMedia[index]!,
+                              mediaList: topMedia,
+                              index: index,
+                            ),
                     ),
                   ),
                 );
@@ -551,10 +544,10 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                       child: doubleTopMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
                           : buildMediaTile(
-                        media: doubleTopMedia[index]!,
-                        mediaList: doubleTopMedia,
-                        index: index,
-                      )
+                              media: doubleTopMedia[index]!,
+                              mediaList: doubleTopMedia,
+                              index: index,
+                            ),
                     ),
                   ),
                 );
@@ -614,10 +607,10 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                       child: bottomMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
                           : buildMediaTile(
-                        media: bottomMedia[index]!,
-                        mediaList: bottomMedia,
-                        index: index,
-                      )
+                              media: bottomMedia[index]!,
+                              mediaList: bottomMedia,
+                              index: index,
+                            ),
                     ),
                   ),
                 );
@@ -677,10 +670,10 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                       child: doubleBottomMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
                           : buildMediaTile(
-                        media: doubleBottomMedia[index]!,
-                        mediaList: doubleBottomMedia,
-                        index: index,
-                      )
+                              media: doubleBottomMedia[index]!,
+                              mediaList: doubleBottomMedia,
+                              index: index,
+                            ),
                     ),
                   ),
                 );
@@ -732,10 +725,10 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                       child: leftMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
                           : buildMediaTile(
-                        media: leftMedia[index]!,
-                        mediaList: leftMedia,
-                        index: index,
-                      )
+                              media: leftMedia[index]!,
+                              mediaList: leftMedia,
+                              index: index,
+                            ),
                     ),
                   ),
                 );
@@ -792,10 +785,10 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                       child: rightMedia[index] == null
                           ? Icon(Icons.add, color: Colors.brown)
                           : buildMediaTile(
-                        media: rightMedia[index]!,
-                        mediaList: rightMedia,
-                        index: index,
-                      )
+                              media: rightMedia[index]!,
+                              mediaList: rightMedia,
+                              index: index,
+                            ),
                     ),
                   ),
                 );
@@ -885,10 +878,10 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                     child: medias[index] == null
                         ? Icon(Icons.add, color: Colors.brown)
                         : buildMediaTile(
-                      media: medias[index]!,
-                      mediaList: medias,
-                      index: index,
-                    )
+                            media: medias[index]!,
+                            mediaList: medias,
+                            index: index,
+                          ),
                   ),
                 );
               },
@@ -951,26 +944,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
         _titleController.text = entry.title ?? "";
         _subtitleController.text = entry.subtitle ?? "";
       }
-      loadedImages = entry.imagePaths;
+      final loadedMedia = entry.mediaFiles;
+      if (loadedMedia != null) {
+        count = loadedMedia.length;
 
-      if (loadedImages != null) {
-        count = entry.imagePaths!.length;
-
-        List<MediaFile> fileImages =
-        loadedImages!
-            .map(
-              (e) => MediaFile(
-            path: e,
-            type: MediaType.image,
-          ),
-        )
-            .toList();
         final templt = getMediaOfTemplates(selectedTemplates);
-        for (int i = 0; i < count; i++) {
-          templt[i] =  MediaFile(
-            path: fileImages[i].path,
-            type: MediaType.image,
-          );
+        for (int i = 0; i < loadedMedia.length; i++) {
+          templt[i] = loadedMedia[i];
         }
       }
       setState(() {
@@ -999,7 +979,9 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
   }
 
   Future<void> changeTemplates(newTemplates, newCount) async {
-    List<MediaFile?> oldImages = List.from(getMediaOfTemplates(selectedTemplates));
+    List<MediaFile?> oldImages = List.from(
+      getMediaOfTemplates(selectedTemplates),
+    );
     int oldImageLength = oldImages.where((e) => e != null).length;
 
     if (oldImageLength <= newCount) {
@@ -1015,8 +997,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
       final remainingImages = await showDialog(
         context: context,
         builder: (context) {
-          final dialogImages =
-          oldImages.where((e) => e != null).toList();
+          final dialogImages = oldImages.where((e) => e != null).toList();
           return StatefulBuilder(
             builder: (context, dialogSetState) {
               return AlertDialog(
@@ -1029,14 +1010,11 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
 
                 title: Row(
                   children: [
-                    
                     Expanded(
                       child: Center(
                         child: Text(
                           "Keep only $newCount images",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w400,
-                          ),
+                          style: const TextStyle(fontWeight: FontWeight.w400),
                         ),
                       ),
                     ),
@@ -1063,21 +1041,37 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                         child: GridView.builder(
                           itemCount: dialogImages.length,
                           gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                              ),
                           itemBuilder: (context, index) {
                             return Stack(
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
                                   child: SizedBox.expand(
-                                    child: Image.file(
-                                      File(dialogImages[index]!.path),
-                                      fit: BoxFit.cover,
-                                    ),
+                                    child:
+                                        dialogImages[index]!.type ==
+                                            MediaType.image
+                                        ? Image.file(
+                                            File(dialogImages[index]!.path),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : Container(
+                                            color: Colors.black12,
+                                            child: const Center(
+                                              child: Icon(
+                                                Icons.play_circle_fill,
+                                                size: 40,
+                                              ),
+                                            ),
+                                          ),
+                                    // Image.file(
+                                    //   File(dialogImages[index]!.path),
+                                    //   fit: BoxFit.cover,
+                                    // ),
                                   ),
                                 ),
 
@@ -1164,13 +1158,17 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                       Expanded(
                         child: FilledButton.icon(
                           style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.resolveWith((states) {
+                            backgroundColor: MaterialStateProperty.resolveWith((
+                              states,
+                            ) {
                               if (states.contains(MaterialState.disabled)) {
                                 return Colors.grey.shade300;
                               }
                               return Colors.pink.shade200;
                             }),
-                            foregroundColor: MaterialStateProperty.resolveWith((states) {
+                            foregroundColor: MaterialStateProperty.resolveWith((
+                              states,
+                            ) {
                               if (states.contains(MaterialState.disabled)) {
                                 return Colors.grey.shade500;
                               }
@@ -1184,8 +1182,8 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                           ),
                           onPressed: dialogImages.length == newCount
                               ? () {
-                            Navigator.pop(context, dialogImages);
-                          }
+                                  Navigator.pop(context, dialogImages);
+                                }
                               : null,
                           icon: const Icon(Icons.check),
                           label: Text(
@@ -1201,16 +1199,11 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
           );
         },
       );
-      if (remainingImages != null &&
-          remainingImages.length <= newCount) {
-
+      if (remainingImages != null && remainingImages.length <= newCount) {
         selectedTemplates = newTemplates;
         count = newCount;
 
-
-
-        List<MediaFile?> targetImages =
-        getMediaOfTemplates(selectedTemplates);
+        List<MediaFile?> targetImages = getMediaOfTemplates(selectedTemplates);
 
         for (int i = 0; i < targetImages.length; i++) {
           targetImages[i] = null;
@@ -1225,10 +1218,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
     }
   }
 
-  void showMediaOptions(
-      List<MediaFile?> mediaList,
-      int index,
-      ) {
+  void showMediaOptions(List<MediaFile?> mediaList, int index) {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -1241,18 +1231,14 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
               onTap: () {
                 Navigator.pop(context);
 
-                if (mediaList[index]!.type ==
-                    MediaType.image) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => FullScreenImage(
-                        imagePath:
-                        mediaList[index]!.path,
-                      ),
+                      builder: (_) =>
+                          FullScreenImage(media:  mediaList[index]!),
                     ),
                   );
-                }
+
               },
             ),
 
@@ -1313,16 +1299,13 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                 backgroundColor: MaterialStateProperty.all(Colors.brown),
               ),
               onPressed: () async {
-
                 if (selectDiary == null) {
                   return;
                 }
 
-                final imagePath = getMediaOfTemplates(
+                final mediaFiles = getMediaOfTemplates(
                   selectedTemplates,
-                ).where((e) => e != null).map((e) => e!.path).toList();
-
-
+                ).where((e) => e != null).cast<MediaFile>().toList();
 
                 final diaryEntry = DiaryEntryModel(
                   diaryId: selectDiary.id!,
@@ -1331,29 +1314,24 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                   font: selectedFont,
                   mood: selectedMoods,
                   templateIndex: selectedTemplates.index,
-                  imagePaths: imagePath,
+                  mediaFiles: mediaFiles,
                   title: _titleController.text.trim(),
                   subtitle: _subtitleController.text.trim(),
                 );
 
-              if (_contentController.text.trim().isNotEmpty ||
+                if (_contentController.text.trim().isNotEmpty ||
                     _titleController.text.trim().isNotEmpty ||
                     _subtitleController.text.trim().isNotEmpty ||
-                    imagePath.isNotEmpty) {
+                    mediaFiles.isNotEmpty) {
                   hasEntry = true;
                 } else {
                   hasEntry = false;
                 }
 
                 try {
-
                   if (hasEntry) {
-
                     await DatabaseHelper.instance.insertDiaryEntry(diaryEntry);
-
-                  } else {
-                  }
-
+                  } else {}
 
                   Navigator.pop(
                     context,
@@ -1379,7 +1357,6 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                 ],
               ),
             ),
-
           ],
         ),
       ),

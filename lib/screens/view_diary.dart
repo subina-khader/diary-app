@@ -4,6 +4,7 @@ import 'package:diary/services/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../models/media_model.dart';
 import '../providers/selectdiary_provider.dart';
 import 'adddiary/add_diaryentry.dart';
 
@@ -51,7 +52,7 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
     super.dispose();
   }
 
-  Widget? selectTemplates(int templateIndex, int index) {
+  Widget selectTemplates(int templateIndex, int index) {
     switch (templateIndex) {
       case 0:
         return plainsWidget(index);
@@ -69,7 +70,33 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
         return rightWidget(index);
       case 7:
         return imageWidget(index);
+      default:
+        return plainsWidget(index);
     }
+  }
+
+  Widget buildMediaView(MediaFile media) {
+    if (media.type == MediaType.image) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.file(
+          File(media.path),
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+        ),
+      );
+    }
+
+    return Container(
+      color: Colors.black12,
+      child: const Center(
+        child: Icon(
+          Icons.play_circle_fill,
+          size: 40,
+        ),
+      ),
+    );
   }
 
   Widget plainWidget(int index) {
@@ -102,7 +129,7 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
-              children: List.generate(entries[index].imagePaths!.length, (
+              children: List.generate(entries[index].mediaFiles!.length, (
                 count,
               ) {
                 return Padding(
@@ -130,13 +157,16 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
 
-                        child: Image.file(
-                          File(entries[index].imagePaths![count]),
-
-                          fit: BoxFit.cover,
-
-                          width: double.infinity,
-                          height: double.infinity,
+                        // child: Image.file(
+                        //   File(entries[index].imagePaths![count]),
+                        //
+                        //   fit: BoxFit.cover,
+                        //
+                        //   width: double.infinity,
+                        //   height: double.infinity,
+                        // ),
+                        child: buildMediaView(
+                          entries[index].mediaFiles![count],
                         ),
                       ),
                     ),
@@ -168,7 +198,7 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
               ),
-              itemCount: entries[index].imagePaths?.length,
+              itemCount: entries[index].mediaFiles?.length,
               itemBuilder: (context, count) {
                 return Padding(
                   padding: EdgeInsets.only(right: 8),
@@ -195,13 +225,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
 
-                        child: Image.file(
-                          File(entries[index].imagePaths![count]),
-
-                          fit: BoxFit.cover,
-
-                          width: double.infinity,
-                          height: double.infinity,
+                        child: buildMediaView(
+                          entries[index].mediaFiles![count],
                         ),
                       ),
                     ),
@@ -233,7 +258,7 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
 
-              children: List.generate(entries[index].imagePaths!.length, (
+              children: List.generate(entries[index].mediaFiles!.length, (
                 count,
               ) {
                 return Padding(
@@ -261,13 +286,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
 
-                        child: Image.file(
-                          File(entries[index].imagePaths![count]),
-
-                          fit: BoxFit.cover,
-
-                          width: double.infinity,
-                          height: double.infinity,
+                        child: buildMediaView(
+                          entries[index].mediaFiles![count],
                         ),
                       ),
                     ),
@@ -291,7 +311,7 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               mainAxisSize: MainAxisSize.max,
-              children: List.generate(entries[index].imagePaths!.length, (
+              children: List.generate(entries[index].mediaFiles!.length, (
                 count,
               ) {
                 return Padding(
@@ -319,13 +339,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
 
-                        child: Image.file(
-                          File(entries[index].imagePaths![count]),
-
-                          fit: BoxFit.cover,
-
-                          width: double.infinity,
-                          height: double.infinity,
+                        child: buildMediaView(
+                          entries[index].mediaFiles![count],
                         ),
                       ),
                     ),
@@ -354,7 +369,7 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               mainAxisSize: MainAxisSize.max,
-              children: List.generate(entries[index].imagePaths!.length, (
+              children: List.generate(entries[index].mediaFiles!.length, (
                 count,
               ) {
                 return Padding(
@@ -382,13 +397,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
 
-                        child: Image.file(
-                          File(entries[index].imagePaths![count]),
-
-                          fit: BoxFit.cover,
-
-                          width: double.infinity,
-                          height: double.infinity,
+                        child: buildMediaView(
+                          entries[index].mediaFiles![count],
                         ),
                       ),
                     ),
@@ -438,7 +448,7 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
               ),
-              itemCount: entries[index].imagePaths?.length,
+              itemCount: entries[index].mediaFiles?.length,
               itemBuilder: (context, count) {
                 return InkWell(
                   borderRadius: BorderRadius.circular(12),
@@ -462,13 +472,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
 
-                      child: Image.file(
-                        File(entries[index].imagePaths![count]),
-
-                        fit: BoxFit.cover,
-
-                        width: double.infinity,
-                        height: double.infinity,
+                      child: buildMediaView(
+                        entries[index].mediaFiles![count],
                       ),
                     ),
                   ),
@@ -498,7 +503,7 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
               ),
-              itemCount: entries[index].imagePaths?.length,
+              itemCount: entries[index].mediaFiles?.length,
               itemBuilder: (context, count) {
                 return Padding(
                   padding: EdgeInsets.only(right: 8),
@@ -525,12 +530,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
 
-                        child: Image.file(
-                          File(entries[index].imagePaths![count]),
-                          fit: BoxFit.cover,
-
-                          width: double.infinity,
-                          height: double.infinity,
+                        child: buildMediaView(
+                          entries[index].mediaFiles![count],
                         ),
                       ),
                     ),
@@ -650,8 +651,8 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                                               curve: Curves.easeIn,
                                             );
                                             selectTemplates(
-                                              entries[index!].templateIndex,
-                                              index!,
+                                              entries[index].templateIndex,
+                                              index,
                                             );
                                           }
                                         },
@@ -663,7 +664,7 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                                     ],
                                   ),
                                   SizedBox(height: 20),
-                                  ?selectTemplates(
+                                  selectTemplates(
                                     entries[index].templateIndex,
                                     index,
                                   ),
