@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'home_screen.dart'; // Change to your home screen
+import 'home_screen.dart';
+import 'onboarding_screen.dart'; // Change to your home screen
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,6 +19,49 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
+  // @override
+  // void initState() {
+  //   super.initState();
+  //
+  //   _controller = AnimationController(
+  //     vsync: this,
+  //     duration: const Duration(milliseconds: 1500),
+  //   );
+  //
+  //   _fadeAnimation = Tween<double>(
+  //     begin: 0,
+  //     end: 1,
+  //   ).animate(
+  //     CurvedAnimation(
+  //       parent: _controller,
+  //       curve: Curves.easeIn,
+  //     ),
+  //   );
+  //
+  //   _scaleAnimation = Tween<double>(
+  //     begin: .8,
+  //     end: 1,
+  //   ).animate(
+  //     CurvedAnimation(
+  //       parent: _controller,
+  //       curve: Curves.easeOutBack,
+  //     ),
+  //   );
+  //
+  //   _controller.forward();
+  //
+  //   Timer(
+  //     const Duration(seconds: 3),
+  //         () {
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (_) =>  HomeScreen(),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
   @override
   void initState() {
     super.initState();
@@ -48,19 +93,47 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Timer(
-      const Duration(seconds: 3),
-          () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>  HomeScreen(),
-          ),
-        );
-      },
+    checkFirstTime();
+  }
+  Future<void> checkFirstTime() async {
+    await Future.delayed(const Duration(seconds: 3));
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const OnboardingScreen(),
+      ),
     );
   }
-
+  // Future<void> checkFirstTime() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //
+  //   final firstTime = prefs.getBool("first_time") ?? true;
+  //
+  //   await Future.delayed(const Duration(seconds: 3));
+  //
+  //   if (!mounted) return;
+  //
+  //   if (firstTime) {
+  //     await prefs.setBool("first_time", false);
+  //
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(
+  //         builder: (_) => const OnboardingScreen(),
+  //       ),
+  //     );
+  //   } else {
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(
+  //         builder: (_) => HomeScreen(),
+  //       ),
+  //     );
+  //   }
+  // }
   @override
   void dispose() {
     _controller.dispose();
