@@ -76,21 +76,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
               Spacer(),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14)
-                ),
+              Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14)
+                    ),
 
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: InkWell(
-                    onTap: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=>MoodTracker()));
-                    },
-                    child: Icon(Icons.favorite_border,color: Colors.grey.shade600,),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: InkWell(
+                        onTap: (){
+                          Navigator.push(context, MaterialPageRoute(builder: (context)=>MoodTracker()));
+                        },
+                        child: Icon(Icons.favorite_border,color: Colors.grey.shade600,),
+                      ),
+
+                    ),
                   ),
-                ),
+                  SizedBox(width: 10,),
+                  GestureDetector(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => const PasswordTypeScreen(),
+                      );
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        Icons.person,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+
+                  ),
+                ],
               )
             ],
           ),
