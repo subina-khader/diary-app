@@ -1,6 +1,7 @@
 import 'package:diary/models/diary_model.dart';
 import 'package:diary/models/diarywith_count.dart';
 import 'package:diary/screens/password_type_screen.dart';
+import 'package:diary/screens/profile_options_sheet.dart';
 import 'package:diary/screens/view_diary.dart';
 import 'package:diary/services/database_helper.dart';
 import 'package:flutter/material.dart';
@@ -102,7 +103,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
-                        builder: (_) => const PasswordTypeScreen(),
+                        builder: (_) => const ProfileOptionsSheet(),
                       );
                     },
                     child: Container(
