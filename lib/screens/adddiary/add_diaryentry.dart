@@ -23,6 +23,11 @@ import '../../widgets/video_thumbnail.dart';
 class AddDiaryentry extends ConsumerStatefulWidget {
   const AddDiaryentry({super.key});
 
+
+
+
+
+
   @override
   ConsumerState<AddDiaryentry> createState() => _AddDiaryentryState();
 }
@@ -359,7 +364,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
       builder: (context) {
         return Dialog(
           child: SizedBox(
-            height: 380,
+            height: 400,
             child: TableCalendar(
               calendarBuilders: CalendarBuilders(
                 defaultBuilder: (context, day, focusedDay) {

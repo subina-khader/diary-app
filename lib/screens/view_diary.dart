@@ -400,24 +400,40 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
   @override
   Widget build(BuildContext context) {
     final selectedDiary = ref.read(SelectedDiaryProvider.notifier);
+    final selectDiary = ref.watch(SelectedDiaryProvider);
+
     return Scaffold(
       backgroundColor: Colors.pink.shade50,
       appBar: AppBar(
         backgroundColor: Colors.pink.shade50,
         automaticallyImplyLeading: true,
         title: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.edit, color: Colors.brown),
-            ),
-            IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.settings, color: Colors.brown),
+            Text(
+              selectDiary?.name ?? "Diary",
+              style: const TextStyle(
+                fontSize: 30,
+                fontFamily: "Caveat",
+                fontWeight: FontWeight.w600,
+                color: Colors.brown,
+              ),
             ),
           ],
         ),
+        // title: Row(
+        //   mainAxisAlignment: MainAxisAlignment.end,
+        //   children: [
+        //     IconButton(
+        //       onPressed: () {},
+        //       icon: Icon(Icons.edit, color: Colors.brown),
+        //     ),
+        //     IconButton(
+        //       onPressed: () {},
+        //       icon: Icon(Icons.settings, color: Colors.brown),
+        //     ),
+        //   ],
+        // ),
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 30.0),

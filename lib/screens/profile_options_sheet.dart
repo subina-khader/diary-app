@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../services/backup_service.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileOptionsSheet extends StatelessWidget {
@@ -80,8 +80,18 @@ class ProfileOptionsSheet extends StatelessWidget {
               title: "Backup Diaries",
               subtitle: "Save your memories securely",
               iconColor: const Color(0xffCDB8A3),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
+
+                await BackupService.createBackup();
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Backup created successfully'),
+                    ),
+                  );
+                }
               },
             ),
 
