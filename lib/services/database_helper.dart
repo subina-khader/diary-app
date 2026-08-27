@@ -85,7 +85,21 @@ class DatabaseHelper {
     Database db = await instance.database;
     return await db.insert(_diaryTable, diary.toMap());
   }
+  Future<void> deleteDiary(int diaryId) async {
+    final db = await instance.database;
 
+    await db.delete(
+      _diaryEntryTable,
+      where: '$_diaryTableId = ?',
+      whereArgs: [diaryId],
+    );
+
+    await db.delete(
+      _diaryTable,
+      where: '$_diaryId = ?',
+      whereArgs: [diaryId],
+    );
+  }
   Future<List<DiaryModel>> getDiary() async {
     Database db = await instance.database;
     final data = await db.query("$_diaryTable");
