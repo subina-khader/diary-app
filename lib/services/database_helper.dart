@@ -81,9 +81,9 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> insertDiary(DiaryModel diary) async {
+  Future<int> insertDiary(DiaryModel diary) async {
     Database db = await instance.database;
-    await db.insert(_diaryTable, diary.toMap());
+    return await db.insert(_diaryTable, diary.toMap());
   }
 
   Future<List<DiaryModel>> getDiary() async {

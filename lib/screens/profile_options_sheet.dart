@@ -81,14 +81,30 @@ class ProfileOptionsSheet extends StatelessWidget {
               subtitle: "Save your memories securely",
               iconColor: const Color(0xffCDB8A3),
               onTap: () async {
-                Navigator.pop(context);
+                try {
+                  final success = await BackupService.createBackup();
 
-                await BackupService.createBackup();
+                  if (!context.mounted) return;
 
-                if (context.mounted) {
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'Backup created successfully'
+                            : 'Backup cancelled',
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+
+                  Navigator.pop(context);
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Backup created successfully'),
+                      content: Text('Backup failed'),
                     ),
                   );
                 }
@@ -102,11 +118,59 @@ class ProfileOptionsSheet extends StatelessWidget {
               title: "Restore Backup",
               subtitle: "Recover your diary entries",
               iconColor: const Color(0xffAFC8B8),
-              onTap: () {
-                Navigator.pop(context);
+              onTap: () async {
+                final shouldRestore = await showDialog<bool>(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('Restore Backup?'),
+                      content: const Text(
+                        'Your existing diaries will be kept. '
+                            'The backup will be added to your current diaries.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Restore'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (shouldRestore != true) return;
+
+                try {
+                  final success = await BackupService.restoreBackup();
+
+                  if (!context.mounted) return;
+
+                  Navigator.pop(context);
+
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Backup restored successfully'),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (!context.mounted) return;
+
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Restore failed'),
+                    ),
+                  );
+                }
               },
             ),
-
             const SizedBox(height: 14),
 
             _optionTile(
