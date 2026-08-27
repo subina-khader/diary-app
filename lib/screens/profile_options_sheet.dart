@@ -149,11 +149,11 @@ class ProfileOptionsSheet extends StatelessWidget {
                 if (shouldRestore != true) return;
 
                 try {
-                  final success = await BackupService.restoreBackup();
+                  final result = await BackupService.restoreBackup();
 
                   if (!context.mounted) return;
 
-                  if (success) {
+                  if (result == RestoreResult.success) {
                     Navigator.pop(context, true);
 
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -161,8 +161,14 @@ class ProfileOptionsSheet extends StatelessWidget {
                         content: Text('Backup restored successfully'),
                       ),
                     );
-                  } else {
+                  } else if (result == RestoreResult.alreadyRestored) {
                     Navigator.pop(context);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('This backup has already been restored'),
+                      ),
+                    );
                   }
                 } catch (e) {
                   if (!context.mounted) return;
@@ -175,8 +181,7 @@ class ProfileOptionsSheet extends StatelessWidget {
                     ),
                   );
                 }
-              },
-            ),
+              },            ),
             const SizedBox(height: 14),
 
             _optionTile(

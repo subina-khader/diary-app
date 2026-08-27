@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:archive/archive.dart';
 import 'package:diary/models/diary_model.dart';
 import 'package:diary/models/diaryentry_model.dart';
@@ -9,6 +10,12 @@ import 'package:diary/services/database_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+enum RestoreResult {
+  success,
+  cancelled,
+  alreadyRestored,
+}
+
 class BackupService {
   static Future<bool> createBackup() async {
     final diaries = await DatabaseHelper.instance.getDiary();
@@ -117,17 +124,29 @@ class BackupService {
 
     return true;
   }
-  static Future<bool> restoreBackup() async {
+  static Future<RestoreResult> restoreBackup() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['zip'],
     );
 
     if (result == null || result.files.single.path == null) {
-      return false;
+      return RestoreResult.cancelled;
     }
 
     final file = File(result.files.single.path!);
+
+    final backupFileName = p.basename(file.path);
+
+    final prefs = await SharedPreferences.getInstance();
+
+    final restoredBackups =
+        prefs.getStringList('restored_backups') ?? [];
+
+    if (restoredBackups.contains(backupFileName)) {
+      return RestoreResult.alreadyRestored;
+    }
+
     final zipBytes = await file.readAsBytes();
 
     final archive = ZipDecoder().decodeBytes(zipBytes);
@@ -143,6 +162,7 @@ class BackupService {
     );
 
     final backupData = jsonDecode(jsonString);
+
     final diaries = backupData['diaries'] as List;
 
     final appDirectory =
@@ -189,7 +209,8 @@ class BackupService {
           for (final media in mediaData) {
             final backupPath = media['path'] as String;
 
-            final mediaFile = archive.findFile(backupPath);
+            final mediaFile =
+            archive.findFile(backupPath);
 
             if (mediaFile == null) {
               continue;
@@ -225,6 +246,17 @@ class BackupService {
       }
     }
 
-    return true;
-  }}
+    final updatedBackups =
+        prefs.getStringList('restored_backups') ?? [];
+
+    updatedBackups.add(backupFileName);
+
+    await prefs.setStringList(
+      'restored_backups',
+      updatedBackups,
+    );
+
+    return RestoreResult.success;
+  }
+}
 
