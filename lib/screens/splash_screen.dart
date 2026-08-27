@@ -96,16 +96,31 @@ class _SplashScreenState extends State<SplashScreen>
     checkFirstTime();
   }
   Future<void> checkFirstTime() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final firstTime = prefs.getBool('first_time') ?? true;
+
     await Future.delayed(const Duration(seconds: 3));
 
     if (!mounted) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const OnboardingScreen(),
-      ),
-    );
+    if (firstTime) {
+      await prefs.setBool('first_time', false);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const OnboardingScreen(),
+        ),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>  HomeScreen(),
+        ),
+      );
+    }
   }
   // Future<void> checkFirstTime() async {
   //   final prefs = await SharedPreferences.getInstance();

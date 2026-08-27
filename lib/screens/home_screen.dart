@@ -118,8 +118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
-                        Icons.person,
-                        color: Colors.grey.shade600,
+                        Icons.storage_outlined,                        color: Colors.grey.shade600,
                       ),
                     ),
 

@@ -30,20 +30,35 @@ class ProfileOptionsSheet extends StatelessWidget {
 
             const SizedBox(height: 22),
 
-            CircleAvatar(
-              radius: 34,
-              backgroundColor: const Color(0xffF6E6E7),
-              child: Icon(
-                Icons.person,
-                size: 34,
-                color: Colors.brown.shade400,
-              ),
-            ),
+            // CircleAvatar(
+            //   radius: 34,
+            //   backgroundColor: const Color(0xffF6E6E7),
+            //   child: Icon(
+            //     Icons.person,
+            //     size: 34,
+            //     color: Colors.brown.shade400,
+            //   ),
+            // ),
 
             const SizedBox(height: 12),
 
+            // const Text(
+            //   "My Profile",
+            //   style: TextStyle(
+            //     fontSize: 30,
+            //     fontFamily: "Caveat",
+            //     fontWeight: FontWeight.w600,
+            //   ),
+            // ),
+            //
+            // Text(
+            //   "Manage your diary account",
+            //   style: TextStyle(
+            //     color: Colors.grey.shade600,
+            //   ),
+            // ),
             const Text(
-              "My Profile",
+              "Manage Data",
               style: TextStyle(
                 fontSize: 30,
                 fontFamily: "Caveat",
@@ -52,7 +67,7 @@ class ProfileOptionsSheet extends StatelessWidget {
             ),
 
             Text(
-              "Manage your diary account",
+              "Keep your memories safe",
               style: TextStyle(
                 color: Colors.grey.shade600,
               ),
@@ -60,20 +75,20 @@ class ProfileOptionsSheet extends StatelessWidget {
 
             const SizedBox(height: 28),
 
-            _optionTile(
-              icon: Icons.edit_outlined,
-              title: "Edit Profile",
-              subtitle: "Update your name and profile",
-              iconColor: const Color(0xffD8A7AF),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => EditProfileScreen()),
-                );
-            },
-            ),
+            // _optionTile(
+            //   icon: Icons.edit_outlined,
+            //   title: "Edit Profile",
+            //   subtitle: "Update your name and profile",
+            //   iconColor: const Color(0xffD8A7AF),
+            //   onTap: () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(builder: (context) => EditProfileScreen()),
+            //     );
+            // },
+            // ),
 
-            const SizedBox(height: 14),
+            // const SizedBox(height: 14),
 
             _optionTile(
               icon: Icons.cloud_upload_outlined,
@@ -123,10 +138,20 @@ class ProfileOptionsSheet extends StatelessWidget {
                   context: context,
                   builder: (context) {
                     return AlertDialog(
-                      title: const Text('Restore Backup?'),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      title: const Text(
+                        'Restore Backup',
+                        style: TextStyle(
+                          fontFamily: 'Caveat',
+                          fontSize: 26,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       content: const Text(
-                        'Your existing diaries will be kept. '
-                            'The backup will be added to your current diaries.',
+                        'Your current diaries will not be deleted. '
+                            'The backup will be added to them.',
                       ),
                       actions: [
                         TextButton(
@@ -139,6 +164,13 @@ class ProfileOptionsSheet extends StatelessWidget {
                           onPressed: () {
                             Navigator.pop(context, true);
                           },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.brown,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                           child: const Text('Restore'),
                         ),
                       ],
@@ -184,16 +216,16 @@ class ProfileOptionsSheet extends StatelessWidget {
               },            ),
             const SizedBox(height: 14),
 
-            _optionTile(
-              icon: Icons.logout_rounded,
-              title: "Logout",
-              subtitle: "Sign out of your account",
-              iconColor: Colors.red.shade300,
-              textColor: Colors.red.shade400,
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
+            // _optionTile(
+            //   icon: Icons.logout_rounded,
+            //   title: "Logout",
+            //   subtitle: "Sign out of your account",
+            //   iconColor: Colors.red.shade300,
+            //   textColor: Colors.red.shade400,
+            //   onTap: () {
+            //     Navigator.pop(context);
+            //   },
+            // ),
           ],
         ),
       ),
