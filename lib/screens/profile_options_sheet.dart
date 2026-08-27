@@ -130,11 +130,15 @@ class ProfileOptionsSheet extends StatelessWidget {
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () => Navigator.pop(context, false),
+                          onPressed: () {
+                            Navigator.pop(context, false);
+                          },
                           child: const Text('Cancel'),
                         ),
                         ElevatedButton(
-                          onPressed: () => Navigator.pop(context, true),
+                          onPressed: () {
+                            Navigator.pop(context, true);
+                          },
                           child: const Text('Restore'),
                         ),
                       ],
@@ -149,14 +153,16 @@ class ProfileOptionsSheet extends StatelessWidget {
 
                   if (!context.mounted) return;
 
-                  Navigator.pop(context);
-
                   if (success) {
+                    Navigator.pop(context, true);
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Backup restored successfully'),
                       ),
                     );
+                  } else {
+                    Navigator.pop(context);
                   }
                 } catch (e) {
                   if (!context.mounted) return;

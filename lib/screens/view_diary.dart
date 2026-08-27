@@ -494,18 +494,13 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
                                       Spacer(),
                                       InkWell(
                                         onTap: () async {
-                                          int? index = await datePicker();
-                                          if (index != null) {
+                                          final selectedIndex = await datePicker();
+
+                                          if (selectedIndex != null && _pageController.hasClients) {
                                             _pageController.animateToPage(
-                                              index,
-                                              duration: Duration(
-                                                milliseconds: 23,
-                                              ),
+                                              selectedIndex,
+                                              duration: const Duration(milliseconds: 300),
                                               curve: Curves.easeIn,
-                                            );
-                                            selectTemplates(
-                                              entries[index].templateIndex,
-                                              index,
                                             );
                                           }
                                         },
@@ -549,10 +544,21 @@ class _ViewDiaryState extends ConsumerState<ViewDiary> {
             MaterialPageRoute(builder: (context) => AddDiaryentry()),
           );
           await loadEntries();
-          if (passedDate != null) {
-            int pageindex = entries.indexWhere((e) => e.date == passedDate);
-            _pageController.jumpToPage(pageindex);
-          }
+          await loadEntries();
+
+          if (!context.mounted || passedDate == null) return;
+
+          final pageIndex = entries.indexWhere(
+                (e) => e.date == passedDate,
+          );
+
+          if (pageIndex == -1) return;
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_pageController.hasClients) {
+              _pageController.jumpToPage(pageIndex);
+            }
+          });
         },
         child: Icon(Icons.add),
       ),

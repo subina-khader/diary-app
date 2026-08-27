@@ -98,13 +98,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   SizedBox(width: 10,),
                   GestureDetector(
-                    onTap: () {
-                      showModalBottomSheet(
+                    onTap: () async {
+                      final restored = await showModalBottomSheet<bool>(
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
                         builder: (_) => const ProfileOptionsSheet(),
                       );
+
+                      if (restored == true) {
+                        loadDiaries();
+                      }
                     },
                     child: Container(
                       width: 40,

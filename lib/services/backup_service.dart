@@ -8,7 +8,7 @@ import 'package:diary/models/diaryentry_model.dart';
 import 'package:diary/services/database_helper.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
-
+import 'package:path_provider/path_provider.dart';
 class BackupService {
   static Future<bool> createBackup() async {
     final diaries = await DatabaseHelper.instance.getDiary();
@@ -128,7 +128,6 @@ class BackupService {
     }
 
     final file = File(result.files.single.path!);
-
     final zipBytes = await file.readAsBytes();
 
     final archive = ZipDecoder().decodeBytes(zipBytes);
@@ -144,12 +143,88 @@ class BackupService {
     );
 
     final backupData = jsonDecode(jsonString);
+    final diaries = backupData['diaries'] as List;
 
-    print('BACKUP VERSION: ${backupData['version']}');
+    final appDirectory =
+    await getApplicationDocumentsDirectory();
+
+    final mediaDirectory = Directory(
+      '${appDirectory.path}/diary_media',
+    );
+
+    if (!await mediaDirectory.exists()) {
+      await mediaDirectory.create(recursive: true);
+    }
+
+    for (final item in diaries) {
+      final diaryMap = Map<String, dynamic>.from(
+        item['diary'],
+      );
+
+      diaryMap.remove('id');
+
+      final diary = DiaryModel.fromMap(diaryMap);
+
+      final newDiaryId =
+      await DatabaseHelper.instance.insertDiary(diary);
+
+      final entries = item['entries'] as List;
+
+      for (final entryData in entries) {
+        final entryMap = Map<String, dynamic>.from(
+          entryData,
+        );
+
+        entryMap.remove('entryId');
+
+        entryMap['diaryId'] = newDiaryId;
+
+        if (entryMap['imagePaths'] != null) {
+          final mediaData = jsonDecode(
+            entryMap['imagePaths'],
+          ) as List;
+
+          final restoredMedia = <Map<String, dynamic>>[];
+
+          for (final media in mediaData) {
+            final backupPath = media['path'] as String;
+
+            final mediaFile = archive.findFile(backupPath);
+
+            if (mediaFile == null) {
+              continue;
+            }
+
+            final fileName = p.basename(backupPath);
+
+            final restoredPath =
+                '${mediaDirectory.path}/$fileName';
+
+            final restoredFile = File(restoredPath);
+
+            await restoredFile.writeAsBytes(
+              mediaFile.content as List<int>,
+            );
+
+            restoredMedia.add({
+              'path': restoredPath,
+              'type': media['type'],
+            });
+          }
+
+          entryMap['imagePaths'] =
+              jsonEncode(restoredMedia);
+        }
+
+        final diaryEntry =
+        DiaryEntryModel.fromMap(entryMap);
+
+        await DatabaseHelper.instance.insertDiaryEntry(
+          diaryEntry,
+        );
+      }
+    }
 
     return true;
-  }
-
-
-}
+  }}
 
