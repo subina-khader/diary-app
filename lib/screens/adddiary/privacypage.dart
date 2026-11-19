@@ -254,36 +254,66 @@ class _PrivacyPageState extends ConsumerState<PrivacyPage> {
                 fillcolor: Colors.brown,
                 fontcolor: Colors.white,
                 label: "Create Diary",
+
                 onPressed: () async {
+                  // Validate password
+                  if (isPrivate && _passwordController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please enter a password"),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Update provider
                   privacyProvider.updatePassword(
                     isPrivate,
-                    _passwordController.text,
+                    _passwordController.text.trim(),
                   );
+
+                  // Create diary using current local values
                   DiaryModel diary = DiaryModel(
                     name: state.name,
                     themeValue: state.themes!.color,
                     themeName: state.themes!.colorName,
                     categoryIconPath: state.category!.imagePath,
                     categoryName: state.category!.category,
-                    isPrivate: state.isPrivate,
-                    password: state.password,
+                    isPrivate: isPrivate,
+                    password: isPrivate
+                        ? _passwordController.text.trim()
+                        : null,
                   );
+
                   try {
                     await DatabaseHelper.instance.insertDiary(diary);
+
+                    if (!mounted) return;
+
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Successfully created diary")),
+                      const SnackBar(
+                        content: Text("Successfully created diary"),
+                      ),
                     );
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => HomeScreen()),
                     );
                   } catch (e) {
-                    print(e);
+                    debugPrint("Diary creation error: $e");
+
+                    if (!mounted) return;
+
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Diary creation failed")),
+                      const SnackBar(
+                        content: Text("Diary creation failed"),
+                      ),
                     );
                   }
                 },
+
+
               ),
             ],
           ),

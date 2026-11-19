@@ -140,20 +140,7 @@ class DatabaseHelper {
     }
   }
 
-  // Future<void> insertDiaryEntry(DiaryEntryModel entry) async {
-  //   Database db = await instance.database;
-  //   final existing = await getEntryBySelectedDate(entry.diaryId, entry.date);
-  //   if (existing != null) {
-  //     await db.update(
-  //       _diaryEntryTable,
-  //       entry.toMap(),
-  //       where: '$_diaryEntryId=?',
-  //       whereArgs: [existing.id],
-  //     ); //existing .id means the entry id
-  //   } else {
-  //     await db.insert(_diaryEntryTable, entry.toMap());
-  //   }
-  // }
+
 
   Future<List<DiaryEntryModel>> getAllEntriesByDiaryId(int diaryId) async {
     Database db = await instance.database;

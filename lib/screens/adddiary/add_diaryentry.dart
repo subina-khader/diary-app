@@ -260,18 +260,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
                     ),
                   ),
 
-                  // IconButton(
-                  //   onPressed: () async {
-                  //     await pickMedia(
-                  //       mediaList,
-                  //       index,
-                  //     );
-                  //   },
-                  //   icon: const Icon(
-                  //     Icons.edit,
-                  //     color: Colors.white,
-                  //   ),
-                  // ),
+
                 ],
               ),
             ),
@@ -280,39 +269,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
     );
   }
 
-  // Widget buildMediaTile({
-  //   required MediaFile media,
-  //   required List<MediaFile?> mediaList,
-  //   required int index,
-  // }) {
-  //   return Container(
-  //     decoration: BoxDecoration(
-  //       borderRadius: BorderRadius.circular(12),
-  //     ),
-  //     child: media.type == MediaType.image
-  //         ? ClipRRect(
-  //       borderRadius: BorderRadius.circular(12),
-  //       child: Image.file(
-  //         File(media.path),
-  //         fit: BoxFit.cover,
-  //       ),
-  //     )
-  //         : Stack(
-  //       fit: StackFit.expand,
-  //       children: [
-  //         Container(
-  //           color: Colors.black12,
-  //         ),
-  //         const Center(
-  //           child: Icon(
-  //             Icons.play_circle_fill,
-  //             size: 40,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+
   Future<void> loadEntryDates() async {
     final diary = ref.read(SelectedDiaryProvider);
     if (diary == null) return;
@@ -333,30 +290,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
     loadIfContent(selectedDate);
     loadEntryDates();
   }
-  // Widget buildMedia(MediaFile media) {
-  //   if (media.type == MediaType.image) {
-  //     return Image.file(
-  //       File(media.path),
-  //       fit: BoxFit.cover,
-  //     );
-  //   }
-  //
-  //   return Stack(
-  //     fit: StackFit.expand,
-  //     children: [
-  //       VideoThumbnailWidget(
-  //         videoPath: media.path,
-  //       ),
-  //       Center(
-  //         child: Icon(
-  //           Icons.play_circle_fill,
-  //           size: 40,
-  //           color: Colors.white,
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
+
 
   Future<DateTime?> datePicker() async {
     await showDialog(
@@ -412,9 +346,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
 
   Widget plainWidget() {
     return TextField(
-      // keyboardType: TextInputType.multiline,
-      // expands: true,
-      maxLines: null,
+     maxLines: null,
 
       style: TextStyle(color: Colors.black, fontFamily: selectedFont),
       controller: _contentController,
@@ -921,17 +853,7 @@ class _AddDiaryentryState extends ConsumerState<AddDiaryentry> {
     }
   }
 
-  // Future<void> pickImages(List<File?> images, int index) async {
-  //   XFile? image = await picker.pickImage(source: ImageSource.gallery);
-  //   if (image != null) {
-  //     final dir = await getApplicationDocumentsDirectory();
-  //     final fileName = image.path.split('/').last;
-  //     final savedImage = await File(image.path).copy("${dir.path}/$fileName");
-  //     setState(() {
-  //       images[index] = savedImage;
-  //     });
-  //   }
-  // }
+
 
   Future<void> loadIfContent(DateTime selectedDate) async {
     final diary = ref.read(SelectedDiaryProvider);

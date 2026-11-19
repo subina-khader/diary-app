@@ -27,7 +27,6 @@ class _CreateDiaryState extends State<CreateDiary> {
   }
 
   void dispose() {
-    // titleController.dispose();
     super.dispose();
   }
 
@@ -87,6 +86,7 @@ class _CreateDiaryState extends State<CreateDiary> {
             Expanded(
               child: PageView(
                 controller: pgecontroller,
+                physics: NeverScrollableScrollPhysics(),
                 onPageChanged: (index) {
                   setState(() {
                     selectedIndex = index;
