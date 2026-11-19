@@ -14,7 +14,6 @@ Create multiple diaries, capture everyday memories, and design beautiful diary e
 - Create private diaries with password protection.
 
 ### 🎨 Creative Diary Entries
-- Choose from 8 different diary page templates.
 - Add images and videos directly from the gallery.
 - Add stickers and emojis to personalize diary pages.
 - Choose from 15 different fonts for a personalized writing experience.
@@ -31,16 +30,12 @@ Create multiple diaries, capture everyday memories, and design beautiful diary e
 - Navigate between dates using a calendar.
 - View and manage memories associated with specific dates.
 
-### 🔐 Privacy
-- Create password-protected diaries.
-- Keep private diary entries accessible only through password verification.
-
 ### 💾 Backup & Restore
 - Create ZIP backups of diary data.
 - Restore diary data from backup files.
 - Include associated media files in backups.
 
-  ## 📱 Screenshots
+## 📱 Screenshots
 
 ### App Introduction
 <p align="center">
@@ -136,13 +131,13 @@ The application uses SQLite through the `sqflite` package for local data persist
 1. Clone the repository:
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/subina-khader/diary-app.git
    ```
 
 2. Navigate to the project directory:
 
    ```bash
-   cd diary
+   cd diary-app
    ```
 
 3. Install dependencies:
@@ -150,10 +145,8 @@ The application uses SQLite through the `sqflite` package for local data persist
    ```bash
    flutter pub get
    ```
-
-4. Configure Firebase for your platform.
-
-5. Run the application:
+   
+4. Run the application:
 
    ```bash
    flutter run
