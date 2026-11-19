@@ -84,6 +84,7 @@ flutter:
     - assets/images/
     - assets/images/templates/
     - assets/images/onboarding/
+    - assets/screenshots/
 
 
   fonts:
