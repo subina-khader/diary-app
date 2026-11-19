@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/backup_service.dart';
+import '../services/database_helper.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileOptionsSheet extends StatelessWidget {
@@ -215,6 +216,88 @@ class ProfileOptionsSheet extends StatelessWidget {
                 }
               },            ),
             const SizedBox(height: 14),
+
+            const SizedBox(height: 14),
+
+            _optionTile(
+              icon: Icons.delete_outline_rounded,
+              title: "Delete All Data",
+              subtitle: "Permanently delete all your diary entries",
+              iconColor: Colors.red.shade300,
+              textColor: Colors.red.shade400,
+              onTap: () async {
+                final shouldDelete = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) {
+                    return AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      title: const Text(
+                        'Delete All Data?',
+                        style: TextStyle(
+                          fontFamily: 'Caveat',
+                          fontSize: 26,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      content: const Text(
+                        'Are you sure you want to delete all your diaries '
+                            'and diary entries? This action cannot be undone.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(dialogContext, false);
+                          },
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(dialogContext, true);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade400,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Delete All'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (shouldDelete != true) return;
+
+                final messenger = ScaffoldMessenger.of(context);
+
+                try {
+                  await DatabaseHelper.instance.deleteAllData();
+
+                  if (!context.mounted) return;
+
+                  Navigator.pop(context, true);
+
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('All diary data deleted successfully'),
+                    ),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to delete diary data'),
+                    ),
+                  );
+                }
+              },
+            ),
+
 
             // _optionTile(
             //   icon: Icons.logout_rounded,

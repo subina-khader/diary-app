@@ -95,16 +95,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
   }
-  void loadDiaries() async {
+  Future<void> loadDiaries() async {
     final data = await DatabaseHelper.instance.getDiary();
-    diarys.clear();
+    List<DiarywithCount> updatedDiaries = [];
+
     for (DiaryModel n in data) {
-      List entries = await DatabaseHelper.instance.getAllEntriesByDiaryId(
+      final  entries = await DatabaseHelper.instance.getAllEntriesByDiaryId(
         n.id!,
       );
-      diarys.add(DiarywithCount(diary: n, count: entries.length));
+      updatedDiaries.add(DiarywithCount(diary: n, count: entries.length));
     }
+    if (!mounted) return;
+
     setState(() {
+      diarys = updatedDiaries;
+
     });
   }
 
@@ -243,6 +248,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               diary: diarys[index].diary,
               count: diarys[index].count,
               onDelete: () => deleteDiary(diarys[index].diary),
+              onRefresh: loadDiaries,
+
             );
           },
         ),
@@ -269,7 +276,9 @@ class DiaryCard extends ConsumerWidget {
   final DiaryModel diary;
   final int count;
   final VoidCallback onDelete;
-  DiaryCard({super.key, required this.diary, required this.count, required this.onDelete});
+  final Future<void> Function() onRefresh;
+  DiaryCard({super.key, required this.diary, required this.count, required this.onDelete  ,required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -278,12 +287,14 @@ class DiaryCard extends ConsumerWidget {
 
     return InkWell(
 
-      onTap: () {
+      onTap: () async{
         selectedDiary.selectDiary(diary);
-        Navigator.push(
+        await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) =>diary.isPrivate?PasswordTypeScreen():ViewDiary()),
         );
+        await onRefresh();
+
       },
 
       child: Card(

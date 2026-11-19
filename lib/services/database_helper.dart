@@ -212,4 +212,14 @@ class DatabaseHelper {
     );//Get value from map using column name
     return password==diary.first[_diaryPassword]? true:false;
   }
+
+  Future<void> deleteAllData() async {
+    final db = await instance.database;
+
+    await db.transaction((txn) async {
+      await txn.delete(_diaryEntryTable);
+      await txn.delete(_diaryTable);
+    });
+  }
+
 }
