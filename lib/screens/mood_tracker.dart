@@ -315,50 +315,7 @@ class _MoodTrackerState extends ConsumerState<MoodTracker> {
               ),
             ),
 
-      // body: Padding(
-      //   padding: EdgeInsets.fromLTRB(17, 20, 17, 20),
-      //   child: Column(
-      //     children: [
-      //       Container(
-      //         decoration: BoxDecoration(
-      //           color: Colors.white,
-      //           borderRadius: BorderRadius.circular(15),
-      //         ),
-      //         child:Text(
-      //           "Your Mood Distribution",
-      //           style: TextStyle(
-      //             fontSize: 26,
-      //             fontFamily: "Caveat",
-      //             fontWeight: FontWeight.w600,
-      //           ),
-      //         ),
-      //       ),
-      //
-      //       Container(
-      //         decoration: BoxDecoration(
-      //             color: Colors.white,
-      //           borderRadius: BorderRadius.circular(15),
-      //
-      //         ),
-      //         child: Text(
-      //           "Recent Moods",
-      //           style: TextStyle(
-      //             fontSize: 26,
-      //             fontFamily: "Caveat",
-      //             fontWeight: FontWeight.w600,
-      //           ),
-      //         ),
-      //       ),
-      //       Container(
-      //         decoration: BoxDecoration(
-      //             color: Colors.white,
-      //           borderRadius: BorderRadius.circular(15),
-      //
-      //         ),
-      //       ),
-      //     ],
-      //   ),
-      // ),
+
     );
   }
 }

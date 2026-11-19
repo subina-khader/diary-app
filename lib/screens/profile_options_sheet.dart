@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import '../services/backup_service.dart';
+import '../services/database_helper.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileOptionsSheet extends StatelessWidget {
@@ -30,20 +31,13 @@ class ProfileOptionsSheet extends StatelessWidget {
 
             const SizedBox(height: 22),
 
-            CircleAvatar(
-              radius: 34,
-              backgroundColor: const Color(0xffF6E6E7),
-              child: Icon(
-                Icons.person,
-                size: 34,
-                color: Colors.brown.shade400,
-              ),
-            ),
+
 
             const SizedBox(height: 12),
 
+
             const Text(
-              "My Profile",
+              "Manage Data",
               style: TextStyle(
                 fontSize: 30,
                 fontFamily: "Caveat",
@@ -52,7 +46,7 @@ class ProfileOptionsSheet extends StatelessWidget {
             ),
 
             Text(
-              "Manage your diary account",
+              "Keep your memories safe",
               style: TextStyle(
                 color: Colors.grey.shade600,
               ),
@@ -60,28 +54,40 @@ class ProfileOptionsSheet extends StatelessWidget {
 
             const SizedBox(height: 28),
 
-            _optionTile(
-              icon: Icons.edit_outlined,
-              title: "Edit Profile",
-              subtitle: "Update your name and profile",
-              iconColor: const Color(0xffD8A7AF),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => EditProfileScreen()),
-                );
-            },
-            ),
-
-            const SizedBox(height: 14),
 
             _optionTile(
               icon: Icons.cloud_upload_outlined,
               title: "Backup Diaries",
               subtitle: "Save your memories securely",
               iconColor: const Color(0xffCDB8A3),
-              onTap: () {
-                Navigator.pop(context);
+              onTap: () async {
+                try {
+                  final success = await BackupService.createBackup();
+
+                  if (!context.mounted) return;
+
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'Backup created successfully'
+                            : 'Backup cancelled',
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Backup failed'),
+                    ),
+                  );
+                }
               },
             ),
 
@@ -92,23 +98,172 @@ class ProfileOptionsSheet extends StatelessWidget {
               title: "Restore Backup",
               subtitle: "Recover your diary entries",
               iconColor: const Color(0xffAFC8B8),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
+              onTap: () async {
+                final shouldRestore = await showDialog<bool>(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      title: const Text(
+                        'Restore Backup',
+                        style: TextStyle(
+                          fontFamily: 'Caveat',
+                          fontSize: 26,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      content: const Text(
+                        'Your current diaries will not be deleted. '
+                            'The backup will be added to them.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context, false);
+                          },
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context, true);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.brown,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Restore'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (shouldRestore != true) return;
+
+                try {
+                  final result = await BackupService.restoreBackup();
+
+                  if (!context.mounted) return;
+
+                  if (result == RestoreResult.success) {
+                    Navigator.pop(context, true);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Backup restored successfully'),
+                      ),
+                    );
+                  } else if (result == RestoreResult.alreadyRestored) {
+                    Navigator.pop(context);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('This backup has already been restored'),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (!context.mounted) return;
+
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Restore failed'),
+                    ),
+                  );
+                }
+              },            ),
+            const SizedBox(height: 14),
 
             const SizedBox(height: 14),
 
             _optionTile(
-              icon: Icons.logout_rounded,
-              title: "Logout",
-              subtitle: "Sign out of your account",
+              icon: Icons.delete_outline_rounded,
+              title: "Delete All Data",
+              subtitle: "Permanently delete all your diary entries",
               iconColor: Colors.red.shade300,
               textColor: Colors.red.shade400,
-              onTap: () {
-                Navigator.pop(context);
+              onTap: () async {
+                final shouldDelete = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) {
+                    return AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      title: const Text(
+                        'Delete All Data?',
+                        style: TextStyle(
+                          fontFamily: 'Caveat',
+                          fontSize: 26,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      content: const Text(
+                        'Are you sure you want to delete all your diaries '
+                            'and diary entries? This action cannot be undone.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(dialogContext, false);
+                          },
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(dialogContext, true);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade400,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text('Delete All'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (shouldDelete != true) return;
+
+                final messenger = ScaffoldMessenger.of(context);
+
+                try {
+                  await DatabaseHelper.instance.deleteAllData();
+
+                  if (!context.mounted) return;
+
+                  Navigator.pop(context, true);
+
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('All diary data deleted successfully'),
+                    ),
+                  );
+                } catch (e) {
+                  if (!context.mounted) return;
+
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Failed to delete diary data'),
+                    ),
+                  );
+                }
               },
             ),
+
+
+
           ],
         ),
       ),

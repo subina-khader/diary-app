@@ -27,17 +27,89 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     loadDiaries();
   }
+  Future<void> deleteDiary(DiaryModel diary) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Delete Diary?',
+            style: TextStyle(
+              fontFamily: 'Caveat',
+              fontSize: 27,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: const Text(
+            'This diary and all its entries will be permanently deleted.\n\n'
+                'This cannot be undone. If you are not sure, create a backup first.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade400,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
 
-  void loadDiaries() async {
+    if (shouldDelete != true) return;
+
+    try {
+      await DatabaseHelper.instance.deleteDiary(diary.id!);
+
+       loadDiaries();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${diary.name} deleted successfully',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to delete diary'),
+        ),
+      );
+    }
+  }
+  Future<void> loadDiaries() async {
     final data = await DatabaseHelper.instance.getDiary();
-    diarys.clear();
+    List<DiarywithCount> updatedDiaries = [];
+
     for (DiaryModel n in data) {
-      List entries = await DatabaseHelper.instance.getAllEntriesByDiaryId(
+      final  entries = await DatabaseHelper.instance.getAllEntriesByDiaryId(
         n.id!,
       );
-      diarys.add(DiarywithCount(diary: n, count: entries.length));
+      updatedDiaries.add(DiarywithCount(diary: n, count: entries.length));
     }
+    if (!mounted) return;
+
     setState(() {
+      diarys = updatedDiaries;
+
     });
   }
 
@@ -98,13 +170,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   SizedBox(width: 10,),
                   GestureDetector(
-                    onTap: () {
-                      showModalBottomSheet(
+                    onTap: () async {
+                      final restored = await showModalBottomSheet<bool>(
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
                         builder: (_) => const ProfileOptionsSheet(),
                       );
+
+                      if (restored == true) {
+                        loadDiaries();
+                      }
                     },
                     child: Container(
                       width: 40,
@@ -114,8 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
-                        Icons.person,
-                        color: Colors.grey.shade600,
+                        Icons.storage_outlined,                        color: Colors.grey.shade600,
                       ),
                     ),
 
@@ -172,6 +247,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             return DiaryCard(
               diary: diarys[index].diary,
               count: diarys[index].count,
+              onDelete: () => deleteDiary(diarys[index].diary),
+              onRefresh: loadDiaries,
+
             );
           },
         ),
@@ -197,7 +275,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 class DiaryCard extends ConsumerWidget {
   final DiaryModel diary;
   final int count;
-  DiaryCard({super.key, required this.diary, required this.count});
+  final VoidCallback onDelete;
+  final Future<void> Function() onRefresh;
+  DiaryCard({super.key, required this.diary, required this.count, required this.onDelete  ,required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -206,12 +287,14 @@ class DiaryCard extends ConsumerWidget {
 
     return InkWell(
 
-      onTap: () {
+      onTap: () async{
         selectedDiary.selectDiary(diary);
-        Navigator.push(
+        await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) =>diary.isPrivate?PasswordTypeScreen():ViewDiary()),
         );
+        await onRefresh();
+
       },
 
       child: Card(
@@ -223,9 +306,25 @@ class DiaryCard extends ConsumerWidget {
           padding: const EdgeInsets.all(11.0),
           child: Column(
             children: [
-              Align(
-                alignment: Alignment.topRight,
-                child: Container(
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: onDelete,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(35),
+                        color: Colors.white38,
+                      ),
+                      padding: const EdgeInsets.all(5),
+                      child: Icon(
+                        Icons.delete_outline,
+                        size: 20,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(35),
                     color: Colors.white38,
@@ -238,7 +337,7 @@ class DiaryCard extends ConsumerWidget {
                       height: 20,
                     ),
                   ),
-                ),
+                ),]
               ),
               // Spacer(),
               // Align(alignment: Alignment.center, child: Icon(Icons.kayaking)),

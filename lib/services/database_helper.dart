@@ -81,11 +81,25 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> insertDiary(DiaryModel diary) async {
+  Future<int> insertDiary(DiaryModel diary) async {
     Database db = await instance.database;
-    await db.insert(_diaryTable, diary.toMap());
+    return await db.insert(_diaryTable, diary.toMap());
   }
+  Future<void> deleteDiary(int diaryId) async {
+    final db = await instance.database;
 
+    await db.delete(
+      _diaryEntryTable,
+      where: '$_diaryTableId = ?',
+      whereArgs: [diaryId],
+    );
+
+    await db.delete(
+      _diaryTable,
+      where: '$_diaryId = ?',
+      whereArgs: [diaryId],
+    );
+  }
   Future<List<DiaryModel>> getDiary() async {
     Database db = await instance.database;
     final data = await db.query("$_diaryTable");
@@ -126,20 +140,7 @@ class DatabaseHelper {
     }
   }
 
-  // Future<void> insertDiaryEntry(DiaryEntryModel entry) async {
-  //   Database db = await instance.database;
-  //   final existing = await getEntryBySelectedDate(entry.diaryId, entry.date);
-  //   if (existing != null) {
-  //     await db.update(
-  //       _diaryEntryTable,
-  //       entry.toMap(),
-  //       where: '$_diaryEntryId=?',
-  //       whereArgs: [existing.id],
-  //     ); //existing .id means the entry id
-  //   } else {
-  //     await db.insert(_diaryEntryTable, entry.toMap());
-  //   }
-  // }
+
 
   Future<List<DiaryEntryModel>> getAllEntriesByDiaryId(int diaryId) async {
     Database db = await instance.database;
@@ -198,4 +199,14 @@ class DatabaseHelper {
     );//Get value from map using column name
     return password==diary.first[_diaryPassword]? true:false;
   }
+
+  Future<void> deleteAllData() async {
+    final db = await instance.database;
+
+    await db.transaction((txn) async {
+      await txn.delete(_diaryEntryTable);
+      await txn.delete(_diaryTable);
+    });
+  }
+
 }
