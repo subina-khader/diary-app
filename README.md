@@ -40,6 +40,37 @@ Create multiple diaries, capture everyday memories, and design beautiful diary e
 - Restore diary data from backup files.
 - Include associated media files in backups.
 
+  ## 📱 Screenshots
+
+### App Introduction
+<p align="center">
+  <img src="assets/screenshots/splash.jpg" width="220"/>
+</p>
+
+
+
+### Diary Management
+<p align="center">
+   <img src="assets/screenshots/home.jpg" width="220"/>
+   &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="assets/screenshots/new.jpg" width="220"/>
+   &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="assets/screenshots/manage.jpg" width="220"/>
+</p>
+
+### Creative Diary Entries
+<p align="center">
+  <img src="assets/screenshots/add.jpg" width="220"/>
+      &nbsp;&nbsp;&nbsp;&nbsp;
+
+  <img src="assets/screenshots/templates.jpg" width="220"/>
+</p>
+
+### Mood Tracking
+<p align="center">
+  <img src="assets/screenshots/tracker.jpg" width="220"/>
+</p>
+
 
 ## Tech Stack
 
